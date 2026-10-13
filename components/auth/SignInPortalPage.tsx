@@ -350,7 +350,36 @@ export function SignInPortalPage({
         {/* ── 4 ROLE WORKSPACE CARDS GRID ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           
-          {/* Card 1: ASHA / Sub-Centre (Orange) */}
+          {/* Card 1: Rural Citizen (Emerald) */}
+          <button
+            onClick={onSelectRuralCitizen}
+            className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-emerald-200 dark:border-emerald-950/80 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-xl transition-all duration-200 text-left flex flex-col justify-between gap-4 cursor-pointer group scale-100 hover:scale-[1.01]"
+          >
+            <div className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
+                  <Leaf className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                  {t.citizenBadge}
+                </span>
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                  {t.citizenTitle}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  {t.citizenDesc}
+                </p>
+              </div>
+            </div>
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <span>{t.citizenAction}</span>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </button>
+
+          {/* Card 2: ASHA / Sub-Centre (Orange) */}
           <button
             onClick={() => onSelectRole('asha')}
             className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-orange-200 dark:border-orange-950/80 hover:border-orange-500 dark:hover:border-orange-500 hover:shadow-xl transition-all duration-200 text-left flex flex-col justify-between gap-4 cursor-pointer group scale-100 hover:scale-[1.01]"
@@ -379,7 +408,7 @@ export function SignInPortalPage({
             </div>
           </button>
 
-          {/* Card 2: PHC Team (Blue) */}
+          {/* Card 3: PHC Team (Blue) */}
           <button
             onClick={() => onSelectRole('phc_doctor')}
             className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-blue-200 dark:border-blue-950/80 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-xl transition-all duration-200 text-left flex flex-col justify-between gap-4 cursor-pointer group scale-100 hover:scale-[1.01]"
@@ -408,7 +437,7 @@ export function SignInPortalPage({
             </div>
           </button>
 
-          {/* Card 3: DHO Command Center (Indigo) */}
+          {/* Card 4: DHO Command Center (Indigo) */}
           <button
             onClick={() => onSelectRole('district_officer')}
             className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-950/80 hover:border-indigo-500 dark:hover:border-indigo-500 hover:shadow-xl transition-all duration-200 text-left flex flex-col justify-between gap-4 cursor-pointer group scale-100 hover:scale-[1.01]"
@@ -433,35 +462,6 @@ export function SignInPortalPage({
             </div>
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
               <span>{t.dhoAction}</span>
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
-
-          {/* Card 4: Rural Citizen (Emerald) */}
-          <button
-            onClick={onSelectRuralCitizen}
-            className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-emerald-200 dark:border-emerald-950/80 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-xl transition-all duration-200 text-left flex flex-col justify-between gap-4 cursor-pointer group scale-100 hover:scale-[1.01]"
-          >
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
-                  <Leaf className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                  {t.citizenBadge}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                  {t.citizenTitle}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                  {t.citizenDesc}
-                </p>
-              </div>
-            </div>
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              <span>{t.citizenAction}</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>

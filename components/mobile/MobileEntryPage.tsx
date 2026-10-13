@@ -195,7 +195,43 @@ export function MobileEntryPage({
           </div>
         </div>
 
-        {/* ═══ OPTION 2: SIGN IN & PATIENT EHR PORTAL (PAGE 2) ═══ */}
+        {/* ═══ OPTION 2: RURAL CITIZEN PORTAL (PRIMARY CITIZEN ENTRY) ═══ */}
+        {onNavigateToRuralCitizen && (
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-slate-900 border-2 border-emerald-500/60 p-5 shadow-lg flex flex-col justify-between hover:border-emerald-500 transition-colors">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+                  <Leaf className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{isMr ? 'नागरिक सेवा' : 'Citizen Health Portal'}</span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-700/50">
+                  {isMr ? 'सार्वजनिक प्रवेश' : 'Direct Access'}
+                </span>
+              </div>
+
+              <h2 className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                {isMr ? 'ग्रामीण नागरिक पोर्टल' : 'Rural Citizen Health Portal'}
+              </h2>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+                {isMr
+                  ? 'स्व-नोंदणी, मोफत औषधे व तपासण्या यादी, जवळचे PHC शोध, आणि थेट आरोग्य सूचना व स्मरणपत्रे.'
+                  : 'Self-registration, free medicines & lab tests directory, nearest PHC locator, health alerts & medicine reminders.'}
+              </p>
+            </div>
+
+            <button
+              onClick={onNavigateToRuralCitizen}
+              className="mt-5 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-98 text-white font-black text-xs tracking-wide shadow-md shadow-emerald-950/20 dark:shadow-emerald-950/50 flex items-center justify-center gap-2 cursor-pointer transition-transform"
+            >
+              <Leaf className="w-4 h-4" />
+              <span>{isMr ? 'ग्रामीण नागरिक पोर्टल उघडा' : 'Open Rural Citizen Portal'}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* ═══ OPTION 3: SIGN IN & HEALTHCARE STAFF EHR GATEWAY ═══ */}
         <div className="rounded-2xl bg-white dark:bg-gradient-to-b dark:from-slate-900 dark:to-slate-950 border border-slate-200 dark:border-slate-800 p-5 shadow-lg flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -221,39 +257,13 @@ export function MobileEntryPage({
 
           <button
             onClick={onNavigateToSignIn}
-            className="mt-5 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-teal-500 active:scale-98 text-white font-black text-xs tracking-wide shadow-md shadow-emerald-950/20 dark:shadow-emerald-950/50 flex items-center justify-center gap-2 cursor-pointer transition-transform"
+            className="mt-5 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-teal-700 via-slate-800 to-indigo-800 hover:from-teal-600 hover:to-slate-700 active:scale-98 text-white font-black text-xs tracking-wide shadow-md shadow-slate-950/20 dark:shadow-slate-950/50 flex items-center justify-center gap-2 cursor-pointer transition-transform"
           >
             <Users className="w-4 h-4" />
-            <span>{isMr ? 'लॉगिन व ईएचआर पोर्टल उघडा' : 'Sign In & Access EHR Records'}</span>
+            <span>{isMr ? 'लॉगिन व ईएचआर पोर्टल उघडा' : 'Staff Sign In & EHR Access'}</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-
-        {/* ═══ OPTION 3: RURAL CITIZEN PORTAL ═══ */}
-        {onNavigateToRuralCitizen && (
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-slate-900 border-2 border-emerald-500/40 p-4 shadow-md flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                <Leaf className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">
-                  {isMr ? 'ग्रामीण नागरिक पोर्टल' : 'Rural Citizen Portal'}
-                </h3>
-                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium truncate">
-                  {isMr ? 'स्व-नोंदणी, PHC शोध व आरोग्य सूचना' : 'Self-registration, PHCs & health alerts'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={onNavigateToRuralCitizen}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shrink-0 flex items-center gap-1 cursor-pointer shadow-xs active:scale-95 transition-all"
-            >
-              <span>{isMr ? 'उघडा' : 'Open'}</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
 
       </main>
 
