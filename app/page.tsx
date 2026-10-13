@@ -24,6 +24,7 @@ import { EmergencyHelpModal } from '@/components/emergency/EmergencyHelpModal';
 import { LandingPitchPage } from '@/components/landing/LandingPitchPage';
 import { SignInPortalPage } from '@/components/auth/SignInPortalPage';
 import { MobileEntryPage } from '@/components/mobile/MobileEntryPage';
+import { RuralCitizenPage } from '@/components/citizen/RuralCitizenPage';
 import { SymptomChecker } from '@/components/ai/SymptomChecker';
 import { Bot } from 'lucide-react';
 
@@ -46,8 +47,8 @@ export default function Home() {
   const [isSymptomCheckerOpen, setIsSymptomCheckerOpen] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
-  // Unauthenticated view: 'pitch' (desktop page 1), 'signin' (page 2), or 'mobile_entry' (mobile 2-option hub)
-  const [unauthView, setUnauthView] = useState<'pitch' | 'signin' | 'mobile_entry'>('pitch');
+  // Unauthenticated view: 'pitch' (desktop page 1), 'signin' (page 2), 'mobile_entry' (mobile 2-option hub), or 'rural_citizen'
+  const [unauthView, setUnauthView] = useState<'pitch' | 'signin' | 'mobile_entry' | 'rural_citizen'>('pitch');
 
   useEffect(() => {
     setMounted(true);
@@ -153,8 +154,19 @@ export default function Home() {
     return null;
   }
 
-  // ── UNAUTHENTICATED STATE: SPLIT BETWEEN MOBILE ENTRY, PAGE 1 (PITCH) & PAGE 2 (SIGN IN) ──
+  // ── UNAUTHENTICATED STATE: SPLIT BETWEEN MOBILE ENTRY, PAGE 1 (PITCH), PAGE 2 (SIGN IN) & RURAL CITIZEN ──
   if (!isAuthenticated || !role) {
+    // 0. RURAL CITIZEN PUBLIC HEALTH PORTAL (Standalone Offline-First Citizen Hub)
+    if (unauthView === 'rural_citizen') {
+      return (
+        <RuralCitizenPage
+          onBack={() => setUnauthView(isMobile ? 'mobile_entry' : 'signin')}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={toggleDarkMode}
+        />
+      );
+    }
+
     // 1. MOBILE/PWA ENTRY: 2-Option Screen (Emergency & Sign In)
     if (isMobile && unauthView === 'mobile_entry') {
       return (
@@ -162,6 +174,7 @@ export default function Home() {
           <MobileEntryPage
             onOpenEmergency={() => setIsEmergencyOpen(true)}
             onNavigateToSignIn={() => setUnauthView('signin')}
+            onNavigateToRuralCitizen={() => setUnauthView('rural_citizen')}
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
           />
@@ -216,6 +229,7 @@ export default function Home() {
             setSelectedLoginRole(r as Role | 'patient');
             setIsLoginModalOpen(true);
           }}
+          onSelectRuralCitizen={() => setUnauthView('rural_citizen')}
           onOpenEmergency={() => setIsEmergencyOpen(true)}
           onNavigateToPitch={() => {
             if (isMobile) {
