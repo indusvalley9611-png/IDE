@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { canRegisterPatient } from '@/lib/patientPrivacyService';
 import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
+import { MobileBottomNav } from './MobileBottomNav';
 
 export interface AppShellProps {
   children: React.ReactNode;
@@ -182,10 +183,20 @@ export function AppShell({
         />
 
         {/* Dynamic Main Workspace Content */}
-        <main className="flex-1 w-full p-3 sm:p-5 max-w-7xl mx-auto">
+        <main className="flex-1 w-full p-3 sm:p-5 pb-20 lg:pb-5 max-w-7xl mx-auto">
           {children}
         </main>
       </div>
+
+      {/* Native Mobile Bottom Navigation Bar (Hidden on Desktop) */}
+      <MobileBottomNav
+        activeNavItem={activeNavItem}
+        onSelectNavItem={onSelectNavItem}
+        onOpenNewPatient={onOpenNewPatient}
+        onOpenSearch={onOpenSearch}
+        onOpenStockLedger={onOpenStockLedger}
+        onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
+      />
     </div>
   );
 }

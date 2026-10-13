@@ -78,11 +78,11 @@ export default function Home() {
     const mobileDetected = isStandalone || isMobileViewport || isMobileUA || forceMobile;
     setIsMobile(mobileDetected);
 
-    // Default to the main Landing Pitch page so the user always sees the comprehensive landing page
-    setUnauthView('pitch');
+    // Mobile → show mobile entry hub; Desktop → show landing pitch page
+    setUnauthView(mobileDetected ? 'mobile_entry' : 'pitch');
 
     const handleResize = () => {
-      const isMobileNow = window.innerWidth < 768 || window.matchMedia('(display-mode: standalone)').matches;
+      const isMobileNow = window.innerWidth < 768 || window.matchMedia('(max-width: 767px)').matches || window.matchMedia('(display-mode: standalone)').matches;
       setIsMobile(isMobileNow);
     };
     window.addEventListener('resize', handleResize);
@@ -176,8 +176,8 @@ export default function Home() {
       );
     }
 
-    // 1. MOBILE/PWA ENTRY: 2-Option Screen (Emergency & Sign In)
-    if (isMobile && unauthView === 'mobile_entry') {
+    // 1. MOBILE/PWA ENTRY: 3-Option Native Mobile Hub (Emergency SOS, Citizen Portal & Staff Sign In)
+    if (isMobile && (unauthView === 'mobile_entry' || unauthView === 'pitch')) {
       return (
         <>
           <MobileEntryPage
