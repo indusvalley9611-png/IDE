@@ -17,14 +17,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('swasthyasetu_lang');
-      if (saved === 'en' || saved === 'mr') {
+      const saved = localStorage.getItem('swasthyasetu_lang') as Language;
+      const validLangs: Language[] = ['en', 'kn', 'hi', 'ta', 'te', 'mr'];
+      if (saved && validLangs.includes(saved)) {
         setLanguageState(saved);
         return;
       }
-      // Default to Marathi ('mr')
-      setLanguageState('mr');
-      localStorage.setItem('swasthyasetu_lang', 'mr');
+      // Default to English ('en') if not set
+      setLanguageState('en');
+      localStorage.setItem('swasthyasetu_lang', 'en');
     } catch {
       // Fallback
     }
@@ -40,7 +41,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleLanguage = () => {
-    const nextLang = language === 'en' ? 'mr' : 'en';
+    const validLangs: Language[] = ['en', 'kn', 'hi', 'ta', 'te', 'mr'];
+    const idx = validLangs.indexOf(language);
+    const nextLang = validLangs[(idx + 1) % validLangs.length];
     setLanguage(nextLang);
   };
 

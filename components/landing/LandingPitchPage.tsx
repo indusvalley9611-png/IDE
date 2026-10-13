@@ -2,7 +2,9 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ArrowRight, Moon, Sun, Languages, HeartPulse, PhoneCall } from 'lucide-react';
+import { Language } from '@/lib/translations';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { ArrowRight, Moon, Sun, HeartPulse, PhoneCall, ShieldCheck } from 'lucide-react';
 
 interface LandingPitchPageProps {
   onNavigateToSignIn: () => void;
@@ -18,81 +20,140 @@ export function LandingPitchPage({
   isDarkMode,
   onToggleDarkMode,
 }: LandingPitchPageProps) {
-  const { language, toggleLanguage } = useLanguage();
-  const isMr = language === 'mr';
+  const { language } = useLanguage();
+
+  const getLoc = (dict: Record<Language, string>): string => {
+    return dict[language] || dict.en;
+  };
+
+  const t = {
+    deptHeader: getLoc({
+      en: 'Public Health Department, Government Health Platform',
+      kn: 'ಸಾರ್ವಜನಿಕ ಆರೋಗ್ಯ ಇಲಾಖೆ, ಸರ್ಕಾರಿ ಆರೋಗ್ಯ ವೇದಿಕೆ',
+      hi: 'सार्वजनिक स्वास्थ्य विभाग, सरकारी स्वास्थ्य मंच',
+      ta: 'பொது சுகாதாரத் துறை, அரசு சுகாதார தளம்',
+      te: 'ప్రజా ఆరోగ్య విభాగం, ప్రభుత్వ ఆరోగ్య వేదిక',
+      mr: 'महाराष्ट्र सार्वजनिक आरोग्य विभाग',
+    }),
+    appTitle: getLoc({
+      en: 'SwasthyaSetu',
+      kn: 'ಸ್ವಾಸ್ಥ್ಯಸೇತು',
+      hi: 'स्वास्थ्यसेतु',
+      ta: 'சுவஸ்த்யாசேது',
+      te: 'స్వాస్థ్యసేతు',
+      mr: 'स्वास्थ्यसेतू',
+    }),
+    tagline: getLoc({
+      en: 'Integrated Public Health Coordination & Smart Triage Platform',
+      kn: 'ಸಮಗ್ರ ಸಾರ್ವಜನಿಕ ಆರೋಗ್ಯ ಸಮನ್ವಯ ಮತ್ತು ಸ್ಮಾರ್ಟ್ ರೆಫರಲ್ ವೇದಿಕೆ',
+      hi: 'एकीकृत सार्वजनिक स्वास्थ्य समन्वय और स्मार्ट रेफरल मंच',
+      ta: 'ஒருங்கிணைந்த பொது சுகாதார ஒருங்கிணைப்பு மற்றும் ஸ்மார்ட் பரிந்துரை தளம்',
+      te: 'సమగ్ర ప్రజా ఆరోగ్య సమన్వయ మరియు స్మార్ట్ రిఫరల్ వేదిక',
+      mr: 'महाराष्ट्र सार्वजनिक आरोग्य समन्वय व गतिमान ट्रायज व्यासपीठ',
+    }),
+    signInBtn: getLoc({
+      en: 'Sign In / Access Portal',
+      kn: 'ಲಾಗ್ ಇನ್ ಮಾಡಿ / ಪೋರ್ಟಲ್ ಪ್ರವೇಶ',
+      hi: 'लॉगिन करें / पोर्टल खोलें',
+      ta: 'உள்நுழைக / தளம் அணுகல்',
+      te: 'సైన్ ఇన్ చేయండి / పోర్టల్ తెరవండి',
+      mr: 'लॉगिन करा / पोर्टल उघडा',
+    }),
+    ambulanceBadge: getLoc({
+      en: 'EMERGENCY AMBULANCE',
+      kn: 'ತುರ್ತು ಆಂಬ್ಯುಲೆನ್ಸ್',
+      hi: 'आपातकालीन एम्बुलेंस',
+      ta: 'அவசர ஆம்புலன்ஸ்',
+      te: 'అత్యవసర అంబులెన్స్',
+      mr: 'तातडीची रुग्णवाहिका',
+    }),
+    emergencyHelpline: getLoc({
+      en: '108 Helpline',
+      kn: '೧೦೮ ಸಹಾಯವಾಣಿ',
+      hi: '१०८ हेल्पलाइन',
+      ta: '108 உதவி எண்',
+      te: '108 హెల్ప్‌లైన్',
+      mr: '१०८ मदत केंद्र',
+    }),
+    footer: getLoc({
+      en: 'National Health Mission · ABDM & DISHA Compliant · 24x7 Offline First',
+      kn: 'ರಾಷ್ಟ್ರೀಯ ಆರೋಗ್ಯ ಅಭಿಯಾನ · ABDM ಮತ್ತು DISHA ಅನುಸರಣೆ · ಆಫ್‌ಲೈನ್ ಸಿದ್ಧ',
+      hi: 'राष्ट्रीय स्वास्थ्य मिशन · ABDM और DISHA अनुपालन · 24x7 ऑफलाइन सक्षम',
+      ta: 'தேசிய சுகாதார இயக்கம் · ABDM & DISHA இணக்கம் · ஆஃப்லைன் இயக்கம்',
+      te: 'జాతీయ ఆరోగ్య మిషన్ · ABDM & DISHA అనుకూలం · ఆఫ్‌లైన్ సిద్ధం',
+      mr: 'राष्ट्रीय आरोग्य अभियान · ABDM व DISHA सुसंगत · २४x७ ऑफलाईन सक्षम',
+    }),
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-white relative">
+    <div className="min-h-screen flex flex-col justify-between bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 relative selection:bg-orange-500 selection:text-white">
 
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-xs font-black text-white">
+      {/* ── TOP BAR (Clean Light & Dark Header) ── */}
+      <header className="flex items-center justify-between px-4 sm:px-8 py-3.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300 sticky top-0 z-30 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-xs font-black text-white shadow-md shadow-orange-600/30 shrink-0">
             MH
           </div>
-          <span className="text-xs text-slate-400 font-medium hidden sm:block">
-            {isMr ? 'महाराष्ट्र सार्वजनिक आरोग्य विभाग' : 'Public Health Dept, Govt. of Maharashtra'}
+          <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold hidden sm:inline">
+            {t.deptHeader}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={toggleLanguage}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
-          >
-            <Languages className="w-3.5 h-3.5 text-orange-400" />
-            {isMr ? 'EN' : 'मर'}
-          </button>
+          {/* Light / Dark Mode Toggle */}
           <button
             onClick={onToggleDarkMode}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer shadow-2xs"
+            aria-label="Toggle theme"
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-300" />}
+            {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
           </button>
+
+          {/* 6-Language Dropdown Selector */}
+          <LanguageSelector dropdownAlign="right" />
         </div>
       </header>
 
-      {/* Center content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-8">
+      {/* ── CENTER CONTENT HERO ── */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12 text-center gap-8 max-w-xl mx-auto w-full">
 
-        {/* Logo */}
-        <div className="w-16 h-16 rounded-2xl bg-orange-600 flex items-center justify-center shadow-2xl shadow-orange-600/30">
-          <HeartPulse className="w-8 h-8 text-white" />
+        {/* Logo Icon */}
+        <div className="w-18 h-18 rounded-3xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-2xl shadow-orange-600/30 text-white animate-in zoom-in-95 duration-200">
+          <HeartPulse className="w-10 h-10 text-white animate-pulse" />
         </div>
 
-        {/* Name */}
-        <div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight">
-            Swasthya<span className="text-orange-500">Setu</span>
+        {/* Platform Name */}
+        <div className="space-y-1">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+            Swasthya<span className="text-orange-600 dark:text-orange-500">Setu</span>
           </h1>
-          <p className="text-xl sm:text-2xl font-black text-orange-400 mt-1">
-            स्वास्थ्यसेतू
+          <p className="text-xl sm:text-2xl font-black text-orange-600 dark:text-orange-400">
+            {t.appTitle}
           </p>
         </div>
 
         {/* Tagline */}
-        <p className="text-slate-400 text-sm sm:text-base max-w-sm">
-          {isMr
-            ? 'महाराष्ट्र सार्वजनिक आरोग्य समन्वय व्यासपीठ'
-            : 'Maharashtra Public Health Coordination Platform'}
+        <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-md font-medium leading-relaxed">
+          {t.tagline}
         </p>
 
-        {/* Single Login Button */}
+        {/* Main Sign In / Access Portal Button */}
         <button
           onClick={onNavigateToSignIn}
-          className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black text-base transition-all shadow-xl shadow-orange-600/30 cursor-pointer"
+          className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black text-base transition-all shadow-xl shadow-orange-600/30 cursor-pointer group"
         >
-          <span>{isMr ? 'लॉगिन करा' : 'Sign In'}</span>
-          <ArrowRight className="w-5 h-5" />
+          <span>{t.signInBtn}</span>
+          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
 
-      </div>
+      </main>
 
-      {/* Always-visible red Emergency (108) button on bottom-left */}
+      {/* ── FLOATING RED EMERGENCY SOS BUTTON (108) ── */}
       <div className="fixed bottom-6 left-6 z-50">
         <button
           onClick={() => onOpenEmergency ? onOpenEmergency() : onNavigateToSignIn()}
-          className="flex items-center gap-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white px-4 py-3 sm:px-5 sm:py-3.5 rounded-full shadow-2xl hover:shadow-rose-600/50 transition-all border-2 border-white/30 text-sm font-black cursor-pointer group"
+          className="flex items-center gap-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white px-4 py-3 sm:px-5 sm:py-3.5 rounded-full shadow-2xl hover:shadow-rose-600/50 transition-all border-2 border-white/40 text-sm font-black cursor-pointer group"
           aria-label="Call 108 Emergency Helpline"
         >
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
@@ -100,10 +161,10 @@ export function LandingPitchPage({
           </div>
           <div className="text-left">
             <div className="text-[10px] uppercase font-black tracking-wider text-rose-200 leading-none">
-              {isMr ? 'तातडीची रुग्णवाहिका' : 'Emergency Ambulance'}
+              {t.ambulanceBadge}
             </div>
             <div className="text-sm sm:text-base font-black leading-tight">
-              {isMr ? '१०८ मदत केंद्र' : '108 Helpline'}
+              {t.emergencyHelpline}
             </div>
           </div>
           <span className="relative flex h-3 w-3 ml-1">
@@ -113,9 +174,12 @@ export function LandingPitchPage({
         </button>
       </div>
 
-      {/* Footer */}
-      <footer className="py-4 text-center text-xs text-slate-600 border-t border-slate-800">
-        {isMr ? 'राष्ट्रीय आरोग्य अभियान · ABDM व DISHA सुसंगत' : 'National Health Mission · ABDM & DISHA Compliant'}
+      {/* ── FOOTER COMPLIANCE ── */}
+      <footer className="py-4 text-center text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 transition-colors">
+        <div className="flex items-center justify-center gap-1.5 font-medium px-4">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span>{t.footer}</span>
+        </div>
       </footer>
 
     </div>

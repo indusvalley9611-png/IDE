@@ -23,12 +23,13 @@ export default function LoginPage() {
   useEffect(() => {
     setMounted(true);
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark' || (!savedTheme && document.documentElement.classList.contains('dark'))) {
-      setIsDarkMode(true);
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    setIsDarkMode(isDark);
+    if (isDark) {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
     } else {
-      setIsDarkMode(false);
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
     }

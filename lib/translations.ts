@@ -13,6 +13,7 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
   { code: 'hi', label: 'Hindi', native: 'हिन्दी', short: 'हिन्' },
   { code: 'ta', label: 'Tamil', native: 'தமிழ்', short: 'தமி' },
   { code: 'te', label: 'Telugu', native: 'తెలుగు', short: 'తెలు' },
+  { code: 'mr', label: 'Marathi', native: 'मराठी', short: 'मरा' },
 ];
 
 export const translations = {

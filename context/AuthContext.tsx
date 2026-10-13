@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Role, UserProfile } from '@/lib/types';
+import { precacheRoutesForRole } from '@/components/layout/ServiceWorkerRegister';
 
 // Re-export from shared module so existing component imports keep working
 export { PRE_REGISTERED_STAFF, USER_PROFILES_BY_ROLE, ALL_REGISTERED_USERS, findUserById, GUEST_PROFILE } from '@/lib/staffRegistry';
@@ -114,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(AUTH_STORAGE_KEY, phone);
         }
         setGeneratedOtp(null);
+        // Pre-cache app routes for offline access
+        precacheRoutesForRole(data.user.role);
         return { success: true };
       }
       return { success: false, error: data.error || 'Invalid OTP' };
@@ -132,6 +135,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(AUTH_STORAGE_KEY, profile.phone);
       }
+      // Pre-cache app routes for offline access
+      precacheRoutesForRole(newRole);
     }
   };
 
