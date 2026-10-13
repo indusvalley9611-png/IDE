@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Leaf,
 } from 'lucide-react';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
 interface MobileEntryPageProps {
   onOpenEmergency: () => void;
@@ -121,17 +122,8 @@ export function MobileEntryPage({
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
           </button>
 
-          {/* Language Switcher Button */}
-          <button
-            onClick={toggleLanguage}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
-            title="भाषा बदला / Change Language"
-          >
-            <Languages className="w-3.5 h-3.5 text-orange-500" />
-            <span className="text-[11px] font-black">
-              {isMr ? 'मराठी' : 'EN'}
-            </span>
-          </button>
+          {/* 5-Language Selector */}
+          <LanguageSelector dropdownAlign="right" />
         </div>
       </header>
 

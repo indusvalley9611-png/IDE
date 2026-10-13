@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSync } from '@/context/SyncContext';
 import { Role } from '@/lib/types';
+import { SUPPORTED_LANGUAGES } from '@/lib/translations';
 import {
   FolderHeart,
   HeartHandshake,
@@ -504,11 +505,11 @@ export function Sidebar({
             <button
               onClick={toggleLanguage}
               className="flex-1 py-1.5 px-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-              title="Toggle Language (EN / मराठी)"
+              title="Cycle Language (English / ಕನ್ನಡ / हिन्दी / தமிழ் / తెలుగు)"
             >
               <Languages className="w-3.5 h-3.5 text-blue-500" />
               {!isCollapsed && (
-                <span>{language === 'mr' ? 'मराठी' : 'English'}</span>
+                <span>{(SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0]).native}</span>
               )}
             </button>
             <button

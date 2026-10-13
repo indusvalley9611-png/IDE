@@ -1,13 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Language, translations } from '@/lib/translations';
+import { Language, SUPPORTED_LANGUAGES, translations } from '@/lib/translations';
+
+const ORDERED_LANGUAGES: Language[] = ['en', 'kn', 'hi', 'ta', 'te'];
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: keyof typeof translations['en']) => string;
+  supportedLanguages: typeof SUPPORTED_LANGUAGES;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -17,17 +20,31 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('swasthyasetu_lang');
-      if (saved === 'en' || saved === 'mr') {
+      const saved = localStorage.getItem('swasthyasetu_lang') as Language | null;
+      if (saved && (ORDERED_LANGUAGES.includes(saved) || saved === 'mr')) {
         setLanguageState(saved);
         return;
       }
-      // On first load, default to browser/device locale if detectable, else English
       if (typeof navigator !== 'undefined') {
         const browserLang = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase();
-        if (browserLang.startsWith('mr') || browserLang.includes('marathi')) {
-          setLanguageState('mr');
-          localStorage.setItem('swasthyasetu_lang', 'mr');
+        if (browserLang.startsWith('kn')) {
+          setLanguageState('kn');
+          localStorage.setItem('swasthyasetu_lang', 'kn');
+          return;
+        }
+        if (browserLang.startsWith('hi')) {
+          setLanguageState('hi');
+          localStorage.setItem('swasthyasetu_lang', 'hi');
+          return;
+        }
+        if (browserLang.startsWith('ta')) {
+          setLanguageState('ta');
+          localStorage.setItem('swasthyasetu_lang', 'ta');
+          return;
+        }
+        if (browserLang.startsWith('te')) {
+          setLanguageState('te');
+          localStorage.setItem('swasthyasetu_lang', 'te');
           return;
         }
       }
@@ -47,21 +64,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Cycles through all 5 languages: English -> Kannada -> Hindi -> Tamil -> Telugu
   const toggleLanguage = () => {
-    const nextLang = language === 'en' ? 'mr' : 'en';
-    setLanguage(nextLang);
+    const currentIndex = ORDERED_LANGUAGES.indexOf(language);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % ORDERED_LANGUAGES.length;
+    setLanguage(ORDERED_LANGUAGES[nextIndex]);
   };
 
   const t = (key: keyof typeof translations['en']): string => {
-    const langDict = translations[language];
-    if (langDict && langDict[key]) {
-      return langDict[key];
+    const langDict = translations[language] || translations['en'];
+    if (langDict && (langDict as any)[key]) {
+      return (langDict as any)[key];
     }
     return translations['en'][key] || String(key);
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t, supportedLanguages: SUPPORTED_LANGUAGES }}>
       {children}
     </LanguageContext.Provider>
   );

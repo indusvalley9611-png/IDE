@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Leaf,
 } from 'lucide-react';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
 interface SignInPortalPageProps {
   onSelectRole: (role: Role | 'patient') => void;
@@ -84,19 +85,8 @@ export function SignInPortalPage({
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {/* Neutral Language Selector: EN | मर */}
-          <button
-            onClick={toggleLanguage}
-            className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
-            title="Switch Language / भाषा बदला"
-          >
-            <Languages className="w-3.5 h-3.5 text-orange-500" />
-            <span className="tracking-wide text-xs">
-              <span className={!isMr ? 'text-slate-900 dark:text-white font-black' : 'text-slate-400 font-medium'}>EN</span>
-              <span className="text-slate-400 mx-1">|</span>
-              <span className={isMr ? 'text-slate-900 dark:text-white font-black' : 'text-slate-400 font-medium'}>मर</span>
-            </span>
-          </button>
+          {/* 5-Language Selector */}
+          <LanguageSelector dropdownAlign="right" />
         </div>
       </header>
 
