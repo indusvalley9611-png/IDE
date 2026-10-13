@@ -29,7 +29,7 @@ interface StaffLoginModalProps {
   initialRole?: Role;
 }
 
-export type StaffTier = 'asha' | 'phc' | 'specialist' | 'district_officer';
+export type StaffTier = 'asha' | 'phc' | 'district_officer';
 
 export function StaffLoginModal({ onClose, initialRole }: StaffLoginModalProps) {
   const { sendOtp, verifyOtp } = useAuth();
@@ -41,7 +41,6 @@ export function StaffLoginModal({ onClose, initialRole }: StaffLoginModalProps) 
   const getActiveTier = (r?: Role): StaffTier => {
     if (!r) return 'phc';
     if (r === 'asha') return 'asha';
-    if (r === 'specialist') return 'specialist';
     if (r === 'district_officer') return 'district_officer';
     return 'phc';
   };
@@ -58,8 +57,6 @@ export function StaffLoginModal({ onClose, initialRole }: StaffLoginModalProps) 
         if (initialRole === 'nurse') return allStaff.filter((s) => s.role === 'nurse');
         if (initialRole === 'pharmacist') return allStaff.filter((s) => s.role === 'pharmacist');
         return allStaff.filter((s) => s.role === 'phc_doctor' || s.role === 'nurse' || s.role === 'pharmacist');
-      case 'specialist':
-        return allStaff.filter((s) => s.role === 'specialist');
       case 'district_officer':
         return allStaff.filter((s) => s.role === 'district_officer');
       default:
@@ -132,31 +129,6 @@ export function StaffLoginModal({ onClose, initialRole }: StaffLoginModalProps) 
         { en: '● Active · 2m ago', mr: '● सक्रिय: २ मि. पूर्वी', color: 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800' },
         { en: '● Stock: Optimal', mr: '● साठा: समाधानकारक', color: 'text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-950/60 border-teal-300 dark:border-teal-800' },
         { en: '● Duty Active', mr: '● कर्तव्यावर हजर', color: 'text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 border-purple-300 dark:border-purple-800' },
-      ],
-    },
-    specialist: {
-      accent: 'purple',
-      icon: HeartPulse,
-      badgeEn: 'DISTRICT HOSPITAL',
-      badgeMr: 'जिल्हा रुग्णालय',
-      titleEn: 'District Hospital & Specialist Login',
-      titleMr: 'जिल्हा रुग्णालय तज्ज्ञ व कॅज्युअल्टी प्रवेश',
-      facilityNameEn: 'District Hospital Aundh, Pune',
-      facilityNameMr: 'औंध जिल्हा रुग्णालय, पुणे',
-      subEn: 'District Hospital Aundh & Specialist Casualty Network',
-      subMr: 'औंध जिल्हा रुग्णालय व तज्ज्ञ अपघात विभाग नेटवर्क',
-      bgHeader: 'bg-slate-900',
-      iconBg: 'bg-purple-600',
-      iconText: 'text-purple-400',
-      ringColor: 'focus:ring-purple-500',
-      selectedCard: 'bg-purple-50/80 dark:bg-purple-950/30 border-purple-500 ring-2 ring-purple-500/20 shadow-sm',
-      selectedBtn: 'bg-purple-600 text-white font-black shadow-xs',
-      submitBtn: 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20',
-      statusList: [
-        { en: '● Casualty Desk · Live', mr: '● अपघात विभाग: थेट', color: 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800' },
-        { en: '● ICU Grid · Linked', mr: '● ICU ग्रीड: संलग्न', color: 'text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 border-purple-300 dark:border-purple-800' },
-        { en: '● On Call · Ready', mr: '● ऑन कॉल: सज्ज', color: 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800' },
-        { en: '● Active · 5m ago', mr: '● सक्रिय: ५ मि. पूर्वी', color: 'text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-950/60 border-teal-300 dark:border-teal-800' },
       ],
     },
     district_officer: {

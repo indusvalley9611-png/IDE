@@ -6,7 +6,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useSync } from '@/context/SyncContext';
 import { Role, Patient, Referral } from '@/lib/types';
 import { AppShell } from '@/components/layout/AppShell';
-import { SpecialistDashboard } from '@/components/dashboards/SpecialistDashboard';
 import { DistrictCoordinationDashboard } from '@/components/dashboards/DistrictCoordinationDashboard';
 import WorkerWorkspace from '@/components/directory/WorkerWorkspace';
 import { NewPatientModal } from '@/components/ehr/NewPatientModal';
@@ -24,6 +23,7 @@ import { EmergencyHelpModal } from '@/components/emergency/EmergencyHelpModal';
 import { LandingPitchPage } from '@/components/landing/LandingPitchPage';
 import { SignInPortalPage } from '@/components/auth/SignInPortalPage';
 import { MobileEntryPage } from '@/components/mobile/MobileEntryPage';
+import { RuralCitizenPage } from '@/components/citizen/RuralCitizenPage';
 
 export default function Home() {
   const { role, isAuthenticated, switchRole } = useAuth();
@@ -43,8 +43,8 @@ export default function Home() {
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
-  // Unauthenticated view: 'pitch' (desktop page 1), 'signin' (page 2), or 'mobile_entry' (mobile 2-option hub)
-  const [unauthView, setUnauthView] = useState<'pitch' | 'signin' | 'mobile_entry'>('pitch');
+  // Unauthenticated view: 'pitch' (desktop page 1), 'signin' (page 2), 'mobile_entry' (mobile 2-option hub), or 'rural_citizen'
+  const [unauthView, setUnauthView] = useState<'pitch' | 'signin' | 'mobile_entry' | 'rural_citizen'>('pitch');
 
   useEffect(() => {
     setMounted(true);
@@ -131,13 +131,19 @@ export default function Home() {
 
   // ── UNAUTHENTICATED STATE: SPLIT BETWEEN MOBILE ENTRY, PAGE 1 (PITCH) & PAGE 2 (SIGN IN) ──
   if (!isAuthenticated || !role) {
-    // 1. MOBILE/PWA ENTRY: 2-Option Screen (Emergency & Sign In)
-    if (isMobile && unauthView === 'mobile_entry') {
+    // 1. RURAL CITIZEN: Dedicated 7-Feature Citizen Portal
+    if (unauthView === 'rural_citizen') {
       return (
         <>
-          <MobileEntryPage
+          <RuralCitizenPage
+            onBack={() => {
+              if (isMobile) {
+                setUnauthView('mobile_entry');
+              } else {
+                setUnauthView('signin');
+              }
+            }}
             onOpenEmergency={() => setIsEmergencyOpen(true)}
-            onNavigateToSignIn={() => setUnauthView('signin')}
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
           />
@@ -149,7 +155,26 @@ export default function Home() {
       );
     }
 
-    // 2. DESKTOP PAGE 1: Landing Pitch / Marketing & Stats
+    // 2. MOBILE/PWA ENTRY: Action Hub (Emergency, Sign In & Rural Citizen)
+    if (isMobile && unauthView === 'mobile_entry') {
+      return (
+        <>
+          <MobileEntryPage
+            onOpenEmergency={() => setIsEmergencyOpen(true)}
+            onNavigateToSignIn={() => setUnauthView('signin')}
+            onNavigateToRuralCitizen={() => setUnauthView('rural_citizen')}
+            isDarkMode={isDarkMode}
+            onToggleDarkMode={toggleDarkMode}
+          />
+
+          {isEmergencyOpen && (
+            <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
+          )}
+        </>
+      );
+    }
+
+    // 3. DESKTOP PAGE 1: Landing Pitch / Marketing & Stats
     if (unauthView === 'pitch') {
       return (
         <LandingPitchPage
@@ -160,7 +185,7 @@ export default function Home() {
       );
     }
 
-    // 3. PAGE 2: Sign In Portal (Role Selection & Patient EHR ABHA)
+    // 4. PAGE 2: Sign In Portal (Role Selection, Rural Citizen & Patient EHR ABHA)
     return (
       <>
         <SignInPortalPage
@@ -168,6 +193,7 @@ export default function Home() {
             setSelectedLoginRole(r as Role | 'patient');
             setIsLoginModalOpen(true);
           }}
+          onSelectRuralCitizen={() => setUnauthView('rural_citizen')}
           onOpenEmergency={() => setIsEmergencyOpen(true)}
           onNavigateToPitch={() => {
             if (isMobile) {
@@ -230,16 +256,7 @@ export default function Home() {
         />
       )}
 
-      {role === 'specialist' && (
-        <SpecialistDashboard
-          onOpenReferralToken={(ref) => setReferralToken(ref)}
-          onOpenPatientTimeline={(patient) => setTimelinePatient(patient)}
-          onOpenBedMatrix={() => setIsBedMatrixOpen(true)}
-          onOpenNewPatient={() => setIsNewPatientOpen(true)}
-          activeTab={activeNavItem as any}
-          onTabChange={(tab) => setActiveNavItem(tab)}
-        />
-      )}
+
 
       {(role === 'asha' || role === 'phc_doctor' || role === 'nurse' || role === 'pharmacist') && (
         <WorkerWorkspace

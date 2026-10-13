@@ -17,10 +17,12 @@ import {
   User,
   ChevronRight,
   ShieldCheck,
+  Leaf,
 } from 'lucide-react';
 
 interface SignInPortalPageProps {
   onSelectRole: (role: Role | 'patient') => void;
+  onSelectRuralCitizen?: () => void;
   onOpenEmergency: () => void;
   onNavigateToPitch?: () => void;
   isDarkMode: boolean;
@@ -29,6 +31,7 @@ interface SignInPortalPageProps {
 
 export function SignInPortalPage({
   onSelectRole,
+  onSelectRuralCitizen,
   onOpenEmergency,
   onNavigateToPitch,
   isDarkMode,
@@ -177,38 +180,7 @@ export function SignInPortalPage({
             </div>
           </button>
 
-          {/* Card 3: District Hospital & Specialists (Purple) */}
-          <button
-            onClick={() => onSelectRole('specialist')}
-            className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-purple-200 dark:border-purple-950/80 hover:border-purple-500 dark:hover:border-purple-500 hover:shadow-xl transition-all duration-200 text-left flex flex-col justify-between gap-4 cursor-pointer group scale-100 hover:scale-[1.01]"
-          >
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-600/20">
-                  <HeartPulse className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300">
-                  {isMr ? 'जिल्हा रुग्णालय' : 'DISTRICT HOSPITAL'}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                  {isMr ? 'जिल्हा रुग्णालय व तज्ज्ञ विभाग' : 'District Hospital & Specialists'}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                  {isMr
-                    ? 'तज्ज्ञ डॉक्टर, कॅज्युअल्टी ट्रायज, ICU खाट आरक्षण व आपत्कालीन कक्ष.'
-                    : 'Specialist clinicians, casualty triage, ICU admissions, and emergency care.'}
-                </p>
-              </div>
-            </div>
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400">
-              <span>{isMr ? 'तज्ज्ञ विभागात प्रवेश करा' : 'Sign in to Specialist Desk'}</span>
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
-
-          {/* Card 4: DHO Command Center (Indigo) */}
+          {/* Card 3: DHO Command Center (Indigo) */}
           <button
             onClick={() => onSelectRole('district_officer')}
             className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-950/80 hover:border-indigo-500 dark:hover:border-indigo-500 hover:shadow-xl transition-all duration-200 text-left flex flex-col justify-between gap-4 cursor-pointer group scale-100 hover:scale-[1.01]"
@@ -235,6 +207,37 @@ export function SignInPortalPage({
             </div>
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
               <span>{isMr ? 'DHO नियंत्रण कक्षात प्रवेश करा' : 'Sign in to DHO Command'}</span>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </button>
+
+          {/* Card 4: Rural Citizen (Emerald/Green) */}
+          <button
+            onClick={onSelectRuralCitizen}
+            className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-emerald-200 dark:border-emerald-950/80 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-xl transition-all duration-200 text-left flex flex-col justify-between gap-4 cursor-pointer group scale-100 hover:scale-[1.01]"
+          >
+            <div className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
+                  <Leaf className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                  {isMr ? 'ग्रामीण नागरिक' : 'RURAL CITIZEN'}
+                </span>
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                  {isMr ? 'ग्रामीण नागरिक (Rural Citizen Portal)' : 'Rural Citizen (Public Health Portal)'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  {isMr
+                    ? 'स्व-नोंदणी, जवळचे PHC, भेटी, स्थानिक भाषा, ऑफलाईन प्रवेश व १०८ मदत.'
+                    : 'Self-registration, find nearby PHCs, appointments, local language & emergency help.'}
+                </p>
+              </div>
+            </div>
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <span>{isMr ? 'नागरिक पोर्टलमध्ये प्रवेश करा' : 'Open Rural Citizen Portal'}</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>

@@ -63,6 +63,7 @@ export default function LoginPage() {
           setSelectedLoginRole(r);
           setIsLoginModalOpen(true);
         }}
+        onSelectRuralCitizen={() => router.push('/')}
         onOpenEmergency={() => setIsEmergencyOpen(true)}
         onNavigateToPitch={() => router.push('/')}
         isDarkMode={isDarkMode}

@@ -14,11 +14,13 @@ import {
   HeartPulse,
   Users,
   ArrowRight,
+  Leaf,
 } from 'lucide-react';
 
 interface MobileEntryPageProps {
   onOpenEmergency: () => void;
   onNavigateToSignIn: () => void;
+  onNavigateToRuralCitizen?: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
 }
@@ -26,6 +28,7 @@ interface MobileEntryPageProps {
 export function MobileEntryPage({
   onOpenEmergency,
   onNavigateToSignIn,
+  onNavigateToRuralCitizen,
   isDarkMode,
   onToggleDarkMode,
 }: MobileEntryPageProps) {
@@ -233,6 +236,32 @@ export function MobileEntryPage({
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+
+        {/* ═══ OPTION 3: RURAL CITIZEN PORTAL ═══ */}
+        {onNavigateToRuralCitizen && (
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-slate-900 border-2 border-emerald-500/40 p-4 shadow-md flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Leaf className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">
+                  {isMr ? 'ग्रामीण नागरिक पोर्टल' : 'Rural Citizen Portal'}
+                </h3>
+                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium truncate">
+                  {isMr ? 'स्व-नोंदणी, PHC शोध, भेटी व मदत' : 'Self-registration, PHCs, visits & help'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onNavigateToRuralCitizen}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shrink-0 flex items-center gap-1 cursor-pointer shadow-xs active:scale-95 transition-all"
+            >
+              <span>{isMr ? 'उघडा' : 'Open'}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
       </main>
 
