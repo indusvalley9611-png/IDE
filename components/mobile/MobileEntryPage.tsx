@@ -249,7 +249,7 @@ export function MobileEntryPage({
                   {isMr ? 'ग्रामीण नागरिक पोर्टल' : 'Rural Citizen Portal'}
                 </h3>
                 <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium truncate">
-                  {isMr ? 'स्व-नोंदणी, PHC शोध, भेटी व मदत' : 'Self-registration, PHCs, visits & help'}
+                  {isMr ? 'स्व-नोंदणी, PHC शोध व आरोग्य सूचना' : 'Self-registration, PHCs & health alerts'}
                 </p>
               </div>
             </div>

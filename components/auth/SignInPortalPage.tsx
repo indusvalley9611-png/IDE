@@ -231,8 +231,8 @@ export function SignInPortalPage({
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                   {isMr
-                    ? 'स्व-नोंदणी, जवळचे PHC, भेटी, स्थानिक भाषा, ऑफलाईन प्रवेश व १०८ मदत.'
-                    : 'Self-registration, find nearby PHCs, appointments, local language & emergency help.'}
+                    ? 'स्व-नोंदणी, जवळचे PHC शोधणे, भेटींचे नियोजन व आरोग्य सूचना (ऑफलाईन सज्ज).'
+                    : 'Self-registration, find nearby PHCs, appointments & health alerts (offline ready).'}
                 </p>
               </div>
             </div>

@@ -131,27 +131,20 @@ export default function Home() {
 
   // ── UNAUTHENTICATED STATE: SPLIT BETWEEN MOBILE ENTRY, PAGE 1 (PITCH) & PAGE 2 (SIGN IN) ──
   if (!isAuthenticated || !role) {
-    // 1. RURAL CITIZEN: Dedicated 7-Feature Citizen Portal
+    // 1. RURAL CITIZEN: Dedicated Citizen Portal (Works natively offline)
     if (unauthView === 'rural_citizen') {
       return (
-        <>
-          <RuralCitizenPage
-            onBack={() => {
-              if (isMobile) {
-                setUnauthView('mobile_entry');
-              } else {
-                setUnauthView('signin');
-              }
-            }}
-            onOpenEmergency={() => setIsEmergencyOpen(true)}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={toggleDarkMode}
-          />
-
-          {isEmergencyOpen && (
-            <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
-          )}
-        </>
+        <RuralCitizenPage
+          onBack={() => {
+            if (isMobile) {
+              setUnauthView('mobile_entry');
+            } else {
+              setUnauthView('signin');
+            }
+          }}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={toggleDarkMode}
+        />
       );
     }
 
