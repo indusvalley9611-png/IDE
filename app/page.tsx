@@ -176,40 +176,35 @@ export default function Home() {
       );
     }
 
-    // 1. MOBILE/PWA ENTRY: 3-Option Native Mobile Hub (Emergency SOS, Citizen Portal & Staff Sign In)
-    if (isMobile && (unauthView === 'mobile_entry' || unauthView === 'pitch')) {
+    // 1. DUAL RESPONSIVE LANDING: Mobile App Hub on small screens (< md), PC Pitch on large screens (>= md)
+    if (unauthView === 'pitch' || unauthView === 'mobile_entry') {
       return (
         <>
-          <MobileEntryPage
-            onOpenEmergency={() => setIsEmergencyOpen(true)}
-            onNavigateToSignIn={() => setUnauthView('signin')}
-            onNavigateToRuralCitizen={() => setUnauthView('rural_citizen')}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={toggleDarkMode}
-          />
+          {/* ═══ MOBILE PHONES & TABLETS (< 768px): 100% NATIVE MOBILE APP ═══ */}
+          <div className="block md:hidden min-h-screen">
+            <MobileEntryPage
+              onOpenEmergency={() => setIsEmergencyOpen(true)}
+              onNavigateToSignIn={() => setUnauthView('signin')}
+              onNavigateToRuralCitizen={() => setUnauthView('rural_citizen')}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={toggleDarkMode}
+            />
+          </div>
 
-          {isEmergencyOpen && (
-            <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
-          )}
-          {renderAiAssistantTrigger()}
-        </>
-      );
-    }
+          {/* ═══ DESKTOP & LAPTOPS (>= 768px): PC MARKETING & STATS ═══ */}
+          <div className="hidden md:block min-h-screen">
+            <LandingPitchPage
+              onNavigateToSignIn={() => setUnauthView('signin')}
+              onSelectRole={(r) => {
+                setSelectedLoginRole(r as Role | 'patient');
+                setIsLoginModalOpen(true);
+              }}
+              onOpenEmergency={() => setIsEmergencyOpen(true)}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={toggleDarkMode}
+            />
+          </div>
 
-    // 2. DESKTOP PAGE 1: Landing Pitch / Marketing & Stats
-    if (unauthView === 'pitch') {
-      return (
-        <>
-          <LandingPitchPage
-            onNavigateToSignIn={() => setUnauthView('signin')}
-            onSelectRole={(r) => {
-              setSelectedLoginRole(r as Role | 'patient');
-              setIsLoginModalOpen(true);
-            }}
-            onOpenEmergency={() => setIsEmergencyOpen(true)}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={toggleDarkMode}
-          />
           {isLoginModalOpen && selectedLoginRole !== 'patient' && (
             <StaffLoginModal 
               onClose={() => {

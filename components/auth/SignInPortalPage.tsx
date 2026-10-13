@@ -335,7 +335,7 @@ export function SignInPortalPage({
       </header>
 
       {/* ── 2. MAIN SIGN IN AREA ── */}
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-8 py-8 sm:py-12 flex flex-col justify-center space-y-6">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-3.5 sm:px-8 py-4 sm:py-12 flex flex-col justify-center space-y-4 sm:space-y-6">
         
         {/* Section Title */}
         <div>
