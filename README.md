@@ -1,40 +1,71 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏥 SwasthyaSetu — स्वास्थ्यसेतू
+> Digital Health Bridge for Rural Maharashtra
 
-## Getting Started
+## Problem Statement
+Rural healthcare in India suffers from fragmented records, delayed referrals, and communication gaps between village health workers and district hospitals. When a pregnant woman in a remote village develops complications, the referral process through multiple tiers of healthcare can take hours, risking lives.
 
-First, run the development server:
+## Our Solution
+SwasthyaSetu is an integrated, offline-first healthcare coordination platform that connects ASHA workers in remote villages to PHC doctors and District Hospital specialists through a single digital bridge.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Key Features
+- 🤖 AI-Powered Symptom Checker with triage recommendations
+- 🏥 Smart Referral System with GIS-based facility routing
+- 📊 Real-time Analytics Dashboard for district health monitoring
+- 🔴 NEWS2-based Clinical Triage Engine (RED/YELLOW/GREEN priority)
+- 🛏️ Live Bed Matrix tracking (ICU, Ventilator, Oxygen, General)
+- 💊 Drug Stock Management with emergency transfer protocols
+- 📱 Offline-First PWA — works without internet in remote areas
+- 🆔 ABHA ID integration (India's digital health identity)
+- 📹 Teleconsultation between PHC doctors and specialists
+- 🚨 Emergency SOS with 108 Ambulance integration
+- 🗺️ Maharashtra GIS Network Map with Leaflet
+- 🔒 Role-Based Access Control with audit trail
+
+## Supported Roles
+| Role | Access Level | Key Functions |
+|------|-------------|---------------|
+| ASHA Worker | Field | Patient screening, maternal care, offline data entry |
+| PHC Doctor | Facility | OPD consultation, prescriptions, referrals, teleconsult |
+| Specialist | District Hospital | Referral review, admission, discharge, teleconsult |
+| District Health Officer | District | Analytics, resource allocation, epidemic tracking |
+
+## Tech Stack
+- **Frontend:** Next.js 16.3.4 + React 19 + TypeScript 5
+- **Styling:** Tailwind CSS v4
+- **Maps:** Leaflet.js
+- **PDF Generation:** pdf-lib
+- **QR Codes:** qrcode
+- **Icons:** Lucide React
+- **Storage:** IndexedDB + LocalStorage (Offline-first)
+- **Deployment:** Vercel
+
+## Architecture
+```
+Village (ASHA)  →  PHC (Doctor)  →  District Hospital (Specialist)
+     ↑                    ↑                        ↑
+     └──── Offline PWA ───┴──── Smart Referral ────┘
+                              ↓
+                    DHO Command Center
+                    (Analytics + Alerts)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting Started
+```bash
+git clone https://github.com/indusvalley9611-png/Swasthyasetu.git
+cd Swasthyasetu
+npm install
+npm run dev
+```
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Mode
+Click 'Quick Demo' on the landing page to instantly log in as an ASHA worker and experience the full patient referral journey.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Demo Credentials
+The app uses OTP-based authentication. In demo mode, use OTP: `123456` for any role.
 
-## Learn More
+## Team
+Built for IDE Bootcamp 2026
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-=======
-# IDE
->>>>>>> 38b968a713d5ebd82dc1ba08cfb05cc237c11b8f
+## License
+MIT

@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useSync } from '@/context/SyncContext';
 import { Role, Patient, Referral } from '@/lib/types';
 import { AppShell } from '@/components/layout/AppShell';
+import { SpecialistDashboard } from '@/components/dashboards/SpecialistDashboard';
 import { DistrictCoordinationDashboard } from '@/components/dashboards/DistrictCoordinationDashboard';
 import WorkerWorkspace from '@/components/directory/WorkerWorkspace';
 import { NewPatientModal } from '@/components/ehr/NewPatientModal';
@@ -23,7 +24,8 @@ import { EmergencyHelpModal } from '@/components/emergency/EmergencyHelpModal';
 import { LandingPitchPage } from '@/components/landing/LandingPitchPage';
 import { SignInPortalPage } from '@/components/auth/SignInPortalPage';
 import { MobileEntryPage } from '@/components/mobile/MobileEntryPage';
-import { RuralCitizenPage } from '@/components/citizen/RuralCitizenPage';
+import { SymptomChecker } from '@/components/ai/SymptomChecker';
+import { Bot } from 'lucide-react';
 
 export default function Home() {
   const { role, isAuthenticated, switchRole } = useAuth();
@@ -41,10 +43,11 @@ export default function Home() {
   const [isAuditTrailOpen, setIsAuditTrailOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
+  const [isSymptomCheckerOpen, setIsSymptomCheckerOpen] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
-  // Unauthenticated view: 'pitch' (desktop page 1), 'signin' (page 2), 'mobile_entry' (mobile 2-option hub), or 'rural_citizen'
-  const [unauthView, setUnauthView] = useState<'pitch' | 'signin' | 'mobile_entry' | 'rural_citizen'>('pitch');
+  // Unauthenticated view: 'pitch' (desktop page 1), 'signin' (page 2), or 'mobile_entry' (mobile 2-option hub)
+  const [unauthView, setUnauthView] = useState<'pitch' | 'signin' | 'mobile_entry'>('pitch');
 
   useEffect(() => {
     setMounted(true);
@@ -72,11 +75,8 @@ export default function Home() {
     const mobileDetected = isStandalone || isMobileViewport || isMobileUA || forceMobile;
     setIsMobile(mobileDetected);
 
-    if (mobileDetected) {
-      setUnauthView('mobile_entry');
-    } else {
-      setUnauthView('pitch');
-    }
+    // Default to the main Landing Pitch page so the user always sees the comprehensive landing page
+    setUnauthView('pitch');
 
     const handleResize = () => {
       const isMobileNow = window.innerWidth < 768 || window.matchMedia('(display-mode: standalone)').matches;
@@ -108,7 +108,7 @@ export default function Home() {
 
   // Active navigation view managed across left sidebar and main content
   const getDefaultNavItem = (r?: Role) => {
-    if (r === 'district_officer') return 'track_medicine';
+    if (r === 'district_officer') return 'overview';
     if (r === 'specialist') return 'incoming';
     if (r === 'phc_doctor') return 'directory';
     if (r === 'nurse') return 'directory';
@@ -125,37 +125,43 @@ export default function Home() {
     }
   }, [role]);
 
+  const renderAiAssistantTrigger = () => (
+    <>
+      <button
+        onClick={() => setIsSymptomCheckerOpen(true)}
+        className="fixed bottom-5 right-5 z-[80] flex items-center gap-2.5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 active:scale-95 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-2xl transition-all border border-teal-400/40 text-xs sm:text-sm font-semibold"
+        aria-label="Open AI Health Assistant"
+        title="AI Symptom Checker & Clinical Triage"
+      >
+        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+          <Bot className="w-4 h-4 text-white" />
+        </div>
+        <span className="font-bold tracking-wide">AI Health Assistant</span>
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+        </span>
+      </button>
+
+      {isSymptomCheckerOpen && (
+        <SymptomChecker onClose={() => setIsSymptomCheckerOpen(false)} />
+      )}
+    </>
+  );
+
   if (!mounted) {
     return null;
   }
 
   // ── UNAUTHENTICATED STATE: SPLIT BETWEEN MOBILE ENTRY, PAGE 1 (PITCH) & PAGE 2 (SIGN IN) ──
   if (!isAuthenticated || !role) {
-    // 1. RURAL CITIZEN: Dedicated Citizen Portal (Works natively offline)
-    if (unauthView === 'rural_citizen') {
-      return (
-        <RuralCitizenPage
-          onBack={() => {
-            if (isMobile) {
-              setUnauthView('mobile_entry');
-            } else {
-              setUnauthView('signin');
-            }
-          }}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
-        />
-      );
-    }
-
-    // 2. MOBILE/PWA ENTRY: Action Hub (Emergency, Sign In & Rural Citizen)
+    // 1. MOBILE/PWA ENTRY: 2-Option Screen (Emergency & Sign In)
     if (isMobile && unauthView === 'mobile_entry') {
       return (
         <>
           <MobileEntryPage
             onOpenEmergency={() => setIsEmergencyOpen(true)}
             onNavigateToSignIn={() => setUnauthView('signin')}
-            onNavigateToRuralCitizen={() => setUnauthView('rural_citizen')}
             isDarkMode={isDarkMode}
             onToggleDarkMode={toggleDarkMode}
           />
@@ -163,22 +169,46 @@ export default function Home() {
           {isEmergencyOpen && (
             <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
           )}
+          {renderAiAssistantTrigger()}
         </>
       );
     }
 
-    // 3. DESKTOP PAGE 1: Landing Pitch / Marketing & Stats
+    // 2. DESKTOP PAGE 1: Landing Pitch / Marketing & Stats
     if (unauthView === 'pitch') {
       return (
-        <LandingPitchPage
-          onNavigateToSignIn={() => setUnauthView('signin')}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
-        />
+        <>
+          <LandingPitchPage
+            onNavigateToSignIn={() => setUnauthView('signin')}
+            onSelectRole={(r) => {
+              setSelectedLoginRole(r as Role | 'patient');
+              setIsLoginModalOpen(true);
+            }}
+            onOpenEmergency={() => setIsEmergencyOpen(true)}
+            isDarkMode={isDarkMode}
+            onToggleDarkMode={toggleDarkMode}
+          />
+          {isLoginModalOpen && selectedLoginRole !== 'patient' && (
+            <StaffLoginModal 
+              onClose={() => {
+                setIsLoginModalOpen(false);
+                setSelectedLoginRole(undefined);
+              }}
+              initialRole={selectedLoginRole}
+            />
+          )}
+          {isLoginModalOpen && selectedLoginRole === 'patient' && (
+            <PatientDownloadModal onClose={() => setIsLoginModalOpen(false)} />
+          )}
+          {isEmergencyOpen && (
+            <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
+          )}
+          {renderAiAssistantTrigger()}
+        </>
       );
     }
 
-    // 4. PAGE 2: Sign In Portal (Role Selection, Rural Citizen & Patient EHR ABHA)
+    // 3. PAGE 2: Sign In Portal (Role Selection & Patient EHR ABHA)
     return (
       <>
         <SignInPortalPage
@@ -186,7 +216,6 @@ export default function Home() {
             setSelectedLoginRole(r as Role | 'patient');
             setIsLoginModalOpen(true);
           }}
-          onSelectRuralCitizen={() => setUnauthView('rural_citizen')}
           onOpenEmergency={() => setIsEmergencyOpen(true)}
           onNavigateToPitch={() => {
             if (isMobile) {
@@ -215,6 +244,7 @@ export default function Home() {
         {isEmergencyOpen && (
           <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
         )}
+        {renderAiAssistantTrigger()}
       </>
     );
   }
@@ -249,7 +279,16 @@ export default function Home() {
         />
       )}
 
-
+      {role === 'specialist' && (
+        <SpecialistDashboard
+          onOpenReferralToken={(ref) => setReferralToken(ref)}
+          onOpenPatientTimeline={(patient) => setTimelinePatient(patient)}
+          onOpenBedMatrix={() => setIsBedMatrixOpen(true)}
+          onOpenNewPatient={() => setIsNewPatientOpen(true)}
+          activeTab={activeNavItem as any}
+          onTabChange={(tab) => setActiveNavItem(tab)}
+        />
+      )}
 
       {(role === 'asha' || role === 'phc_doctor' || role === 'nurse' || role === 'pharmacist') && (
         <WorkerWorkspace
@@ -336,6 +375,8 @@ export default function Home() {
       {isAuditTrailOpen && (
         <AuditTrailModal onClose={() => setIsAuditTrailOpen(false)} />
       )}
+
+      {renderAiAssistantTrigger()}
     </AppShell>
   );
 }
