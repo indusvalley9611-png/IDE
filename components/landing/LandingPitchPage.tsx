@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ArrowRight, Moon, Sun, Languages, HeartPulse } from 'lucide-react';
+import { ArrowRight, Moon, Sun, Languages, HeartPulse, PhoneCall } from 'lucide-react';
 
 interface LandingPitchPageProps {
   onNavigateToSignIn: () => void;
@@ -14,6 +14,7 @@ interface LandingPitchPageProps {
 
 export function LandingPitchPage({
   onNavigateToSignIn,
+  onOpenEmergency,
   isDarkMode,
   onToggleDarkMode,
 }: LandingPitchPageProps) {
@@ -21,7 +22,7 @@ export function LandingPitchPage({
   const isMr = language === 'mr';
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-white">
+    <div className="min-h-screen flex flex-col bg-slate-950 text-white relative">
 
       {/* Top bar */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
@@ -85,6 +86,31 @@ export function LandingPitchPage({
           <ArrowRight className="w-5 h-5" />
         </button>
 
+      </div>
+
+      {/* Always-visible red Emergency (108) button on bottom-left */}
+      <div className="fixed bottom-6 left-6 z-50">
+        <button
+          onClick={() => onOpenEmergency ? onOpenEmergency() : onNavigateToSignIn()}
+          className="flex items-center gap-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white px-4 py-3 sm:px-5 sm:py-3.5 rounded-full shadow-2xl hover:shadow-rose-600/50 transition-all border-2 border-white/30 text-sm font-black cursor-pointer group"
+          aria-label="Call 108 Emergency Helpline"
+        >
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+            <PhoneCall className="w-4 h-4 text-white fill-white" />
+          </div>
+          <div className="text-left">
+            <div className="text-[10px] uppercase font-black tracking-wider text-rose-200 leading-none">
+              {isMr ? 'तातडीची रुग्णवाहिका' : 'Emergency Ambulance'}
+            </div>
+            <div className="text-sm sm:text-base font-black leading-tight">
+              {isMr ? '१०८ मदत केंद्र' : '108 Helpline'}
+            </div>
+          </div>
+          <span className="relative flex h-3 w-3 ml-1">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+          </span>
+        </button>
       </div>
 
       {/* Footer */}
