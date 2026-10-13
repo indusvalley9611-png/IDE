@@ -22,6 +22,8 @@ import {
   Wifi,
   WifiOff,
   X,
+  Play,
+  Check,
   Lock,
   HelpCircle,
   User,
@@ -55,17 +57,109 @@ export function LandingPortal({
   // Mode: Field Mode (large touch targets for frontline workers) vs Admin Mode (dense overview)
   const [viewMode, setViewMode] = useState<'FIELD' | 'ADMIN'>('FIELD');
 
+  // Interactive 60-Second Value Chain Walkthrough Modal State
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [demoStep, setDemoStep] = useState<number>(0);
+
   // Compliance Explainer Modal State
   const [complianceModal, setComplianceModal] = useState<'ABDM' | 'DISHA' | 'OFFLINE' | null>(null);
 
   // Handle Quick Demo Auto-Login
   const handleLaunchAshaDemo = async () => {
+    setIsDemoModalOpen(false);
     const ashaPhone = PRE_REGISTERED_STAFF['user-asha-01']?.phone || '9822019284';
     await sendOtp(ashaPhone);
     await verifyOtp(ashaPhone, '123456');
   };
 
   const isMr = language === 'mr';
+
+  // 60-Second Closed-Loop Demo Steps (Strictly Single Language)
+  const demoSteps = isMr
+    ? [
+        {
+          step: 1,
+          tag: 'उपकेंद्र गाव पातळी · ऑफलाईन',
+          title: 'दुर्गम वस्तीत आशा कार्यकर्त्याकडून गरोदर मातेची तपासणी',
+          role: 'सुनिता गायकवाड (आशा कार्यकर्त्या - वेल्हे तालुका)',
+          desc: 'सुनिता यांनी मोबाईल नेटवर्क नसतानाही प्रिया कांबळे यांचा उच्च रक्तदाब (१५०/९५ mmHg) नोंदवला. ही नोंद स्थानिक पातळीवर सुरक्षितपणे एनक्रिप्ट करून साठवली गेली.',
+          badge: 'स्थानिक IndexedDB मध्ये सुरक्षित',
+          badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+          icon: Users,
+        },
+        {
+          step: 2,
+          tag: 'नेटवर्क पूर्ववत',
+          title: 'केंद्राच्या मुख्य सर्व्हरशी सुरक्षित डेटा समक्रमण',
+          role: 'स्वास्थ्यसेतू ऑफलाईन इंजिन',
+          desc: 'सुनिता नेटवर्क क्षेत्रात येताच, पार्श्वभूमीतील सिंक यंत्रणेने सर्व प्रलंबित नोंदी आपोआप पुणे जिल्हा आरोग्य केंद्राकडे पाठवल्या.',
+          badge: 'शून्य डेटा हानी · समक्रमित',
+          badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
+          icon: RefreshCw,
+        },
+        {
+          step: 3,
+          tag: 'प्राथमिक आरोग्य केंद्र',
+          title: 'वैद्यकीय अधिकाऱ्यांकडून EHR तपासणी व AI-आधारित ट्रायज',
+          role: 'डॉ. स्नेहा जोशी (वैद्यकीय अधिकारी - वेल्हे प्रा.आ.के.)',
+          desc: 'डॉ. जोशी यांनी नोंदी तपासल्या. प्रणालीने प्री-एक्लॅम्पसियाचा धोका (धोका गुण: ८८/१००, लाल प्राधान्य) ओळखून जिल्हा रुग्णालयाच्या अतिदक्षता विभागात पाठवण्याची शिफारस केली.',
+          badge: 'ABDM आभा संलग्न रेफरल',
+          badgeColor: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300',
+          icon: Stethoscope,
+        },
+        {
+          step: 4,
+          tag: 'जिल्हा रुग्णालय नियंत्रण केंद्र',
+          title: 'कॅज्युअल्टी स्वीकार, ICU खाट आरक्षण व उपचार पूर्ण',
+          role: 'डॉ. विनोद चव्हाण (जिल्हा शल्यचिकित्सक - औंध जिल्हा रुग्णालय)',
+          desc: 'रुग्णवाहिका पोहोचण्यापूर्वीच जिल्हा रुग्णालयाने रेफरल स्वीकारून ICU खाट #०४ आरक्षित केली, आणि डिस्चार्ज नंतर पुढील देखभालीसाठी आशा कार्यकर्त्यांना सूचना दिल्या.',
+          badge: 'अखंड उपचार चक्र पूर्ण',
+          badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+          icon: HeartPulse,
+        },
+      ]
+    : [
+        {
+          step: 1,
+          tag: 'VILLAGE SUB-CENTRE · OFFLINE',
+          title: 'ASHA Logs High-Risk Maternal Visit in Disconnected Hamlet',
+          role: 'Sunita Gaikwad (ASHA Worker - Velhe Taluka)',
+          desc: 'Sunita records high BP (150/95 mmHg) and severe edema for Priya Kamble with zero mobile connectivity. The encounter is securely hashed and stored locally in encrypted browser IndexedDB.',
+          badge: 'Local IndexedDB Enqueued',
+          badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+          icon: Users,
+        },
+        {
+          step: 2,
+          tag: 'CONNECTIVITY RESTORED',
+          title: 'Cryptographic Queue Synchronizes Record to PHC Ledger',
+          role: 'SwasthyaSetu Offline Engine',
+          desc: 'As Sunita enters cellular coverage, the background service worker detects network availability and securely pushes the queued health transaction to the Pune District Health node.',
+          badge: 'Zero Data Loss · Synchronized',
+          badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
+          icon: RefreshCw,
+        },
+        {
+          step: 3,
+          tag: 'PRIMARY HEALTH CENTRE',
+          title: 'PHC Medical Officer Reviews EHR & AI-Assisted Risk Triage',
+          role: 'Dr. Sneha Joshi (Medical Officer - Velhe PHC)',
+          desc: 'Dr. Joshi reviews the synchronized vitals. SwasthyaSetu clinical risk engine flags pre-eclampsia (Risk Score: 88/100, Priority RED) and recommends escalation to District Hospital Aundh Obstetrics & ICU.',
+          badge: 'ABDM ABHA Linked Referral',
+          badgeColor: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300',
+          icon: Stethoscope,
+        },
+        {
+          step: 4,
+          tag: 'DISTRICT HOSPITAL COMMAND',
+          title: 'Casualty Accepts Emergency, Reserves ICU Bed & Completes Care Cycle',
+          role: 'Dr. Vinod Chavan (Civil Surgeon - District Hospital Aundh)',
+          desc: 'District Hospital receives the live referral before ambulance arrival, reserves ICU Bed #04, admits patient, and post-discharge generates counter-referral instructions back to ASHA Sunita for follow-up.',
+          badge: 'Closed-Loop Care Complete',
+          badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+          icon: HeartPulse,
+        },
+      ];
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
@@ -200,44 +294,78 @@ export function LandingPortal({
               )}
             </p>
 
-            {/* Primary Action Buttons */}
-            <div className="flex items-center gap-3.5 flex-wrap pt-2">
-              <button
-                onClick={handleLaunchAshaDemo}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-sm transition-all shadow-lg shadow-orange-500/25 flex items-center gap-2 cursor-pointer scale-100 hover:scale-[1.02]"
-              >
-                <Users className="w-4 h-4 text-white" />
-                <span>{isMr ? 'आशा सेविका १-क्लिक चाचणी' : 'Quick ASHA Demo Login'}</span>
-              </button>
-            </div>
-
             {/* Interactive Compliance Badges with One-Click Proof Modals */}
-            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-800/60">
+            <div className="flex items-center gap-2 flex-wrap pt-2">
               <button
                 onClick={() => setComplianceModal('ABDM')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                className="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
               >
                 <Lock className="w-3.5 h-3.5 text-blue-400" />
-                <span>{isMr ? 'ABDM टप्पे (M1-M3)' : 'ABDM Compliance (M1-M3)'}</span>
+                <span>{isMr ? 'ABDM टप्पे सुसंगतता (M1-M3)' : 'ABDM Milestone Compliance (M1-M3)'}</span>
                 <HelpCircle className="w-3 h-3 text-slate-400" />
               </button>
 
               <button
                 onClick={() => setComplianceModal('DISHA')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                className="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
               >
                 <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{isMr ? 'DISHA डेटा गोपनीयता' : 'DISHA & IT Act Privacy'}</span>
+                <span>{isMr ? 'माहिती तंत्रज्ञान कायदा व DISHA गोपनीयता' : 'IT Act 2000 & DISHA Data Privacy'}</span>
                 <HelpCircle className="w-3 h-3 text-slate-400" />
               </button>
 
               <button
                 onClick={() => setComplianceModal('OFFLINE')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                className="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-orange-400" />
-                <span>{isMr ? 'IndexedDB साठवणूक' : 'Encrypted IndexedDB'}</span>
+                <span>{isMr ? 'स्थानिक IndexedDB सुरक्षितता' : 'Local IndexedDB Resilience'}</span>
                 <HelpCircle className="w-3 h-3 text-slate-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick 60-Second Value Chain Demo Card */}
+          <div className="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 lg:max-w-md w-full shadow-2xl flex flex-col justify-between gap-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
+            
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-orange-400 bg-orange-950/60 px-2.5 py-0.5 rounded-md border border-orange-500/30">
+                  {isMr ? '⚡ ६०-सेकंद थेट प्रात्यक्षिक' : '⚡ 60-Second Live Showcase'}
+                </span>
+                <span className="text-xs text-slate-400 font-mono">
+                  {isMr ? 'मूल्य प्रात्यक्षिक' : 'Proof of Value'}
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-white">
+                {isMr ? 'बंद-लूप आरोग्य प्रवास अनुभवा' : 'Experience the Closed-Loop Journey'}
+              </h3>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                {isMr
+                  ? 'ऑफलाईन नोंदणी, प्राथमिक केंद्र सिंक, AI-रेफरल आणि आयसीयू खाट आरक्षणाचा थेट प्रवास पहा.'
+                  : 'Watch how an offline village encounter syncs to a PHC, triggers AI-assisted tertiary referral, reserves an ICU bed, and counter-refers back to the ASHA.'}
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              <button
+                onClick={() => {
+                  setDemoStep(0);
+                  setIsDemoModalOpen(true);
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-xs sm:text-sm tracking-wide transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer scale-100 hover:scale-[1.02]"
+              >
+                <Play className="w-4 h-4 fill-white" />
+                <span>{isMr ? 'संवादी ६०-सेकंद प्रवास प्रात्यक्षिक' : 'Interactive 60s Journey Walkthrough'}</span>
+              </button>
+
+              <button
+                onClick={handleLaunchAshaDemo}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-slate-600"
+              >
+                <Users className="w-3.5 h-3.5 text-orange-400" />
+                <span>{isMr ? 'आशा सेविका म्हणून १-क्लिक लॉगिन' : 'Instant 1-Click Login as ASHA Sunita'}</span>
               </button>
             </div>
           </div>
@@ -548,6 +676,124 @@ export function LandingPortal({
         </div>
 
       </main>
+
+      {/* ── 5. INTERACTIVE 60-SECOND JOURNEY DEMO MODAL ── */}
+      {isDemoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center font-bold">
+                  <Play className="w-4 h-4 fill-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    {isMr ? 'स्वास्थ्यसेतू ६०-सेकंद अखंड आरोग्य प्रवास' : 'SwasthyaSetu 60-Second End-to-End Journey'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {isMr
+                      ? `टप्पा ${demoStep + 1}/४: ग्रामीण सार्वजनिक आरोग्य समन्वय`
+                      : `Step ${demoStep + 1} of 4: Rural Public Healthcare Coordination`}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDemoModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Stepper Progress Bar */}
+            <div className="grid grid-cols-4 gap-2">
+              {demoSteps.map((st, i) => (
+                <button
+                  key={st.step}
+                  onClick={() => setDemoStep(i)}
+                  className={`h-2 rounded-full transition-all cursor-pointer ${
+                    i === demoStep
+                      ? 'bg-orange-500 ring-2 ring-orange-400/40'
+                      : i < demoStep
+                      ? 'bg-emerald-500'
+                      : 'bg-slate-200 dark:bg-slate-800'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Active Step Content */}
+            {(() => {
+              const cur = demoSteps[demoStep];
+              const StepIcon = cur.icon;
+              return (
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {cur.tag}
+                    </span>
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded ${cur.badgeColor}`}>
+                      {cur.badge}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start gap-3.5 pt-1">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                      <StepIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black text-slate-900 dark:text-white">
+                        {cur.title}
+                      </h4>
+                      <p className="text-xs text-orange-600 dark:text-orange-400 font-bold mt-0.5">
+                        {cur.role}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                    {cur.desc}
+                  </p>
+                </div>
+              );
+            })()}
+
+            {/* Modal Controls */}
+            <div className="flex items-center justify-between gap-3 pt-2">
+              <button
+                disabled={demoStep === 0}
+                onClick={() => setDemoStep((p) => Math.max(0, p - 1))}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 disabled:opacity-40 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+              >
+                {isMr ? 'मागील टप्पा' : 'Previous Step'}
+              </button>
+
+              <div className="flex items-center gap-2">
+                {demoStep < demoSteps.length - 1 ? (
+                  <button
+                    onClick={() => setDemoStep((p) => Math.min(demoSteps.length - 1, p + 1))}
+                    className="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>{isMr ? 'पुढील टप्पा' : 'Next Step'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleLaunchAshaDemo}
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{isMr ? 'थेट प्रात्यक्षिक सुरू करा' : 'Launch Live Demo Workflow'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ── 6. COMPLIANCE EXPLAINER MODAL ── */}
       {complianceModal && (

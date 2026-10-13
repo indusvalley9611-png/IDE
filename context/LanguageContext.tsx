@@ -13,7 +13,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>('mr');
 
   useEffect(() => {
     try {
@@ -22,17 +22,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         setLanguageState(saved);
         return;
       }
-      // On first load, default to browser/device locale if detectable, else English
-      if (typeof navigator !== 'undefined') {
-        const browserLang = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase();
-        if (browserLang.startsWith('mr') || browserLang.includes('marathi')) {
-          setLanguageState('mr');
-          localStorage.setItem('swasthyasetu_lang', 'mr');
-          return;
-        }
-      }
-      setLanguageState('en');
-      localStorage.setItem('swasthyasetu_lang', 'en');
+      // Default to Marathi ('mr')
+      setLanguageState('mr');
+      localStorage.setItem('swasthyasetu_lang', 'mr');
     } catch {
       // Fallback
     }

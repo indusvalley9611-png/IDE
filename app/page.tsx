@@ -24,6 +24,8 @@ import { EmergencyHelpModal } from '@/components/emergency/EmergencyHelpModal';
 import { LandingPitchPage } from '@/components/landing/LandingPitchPage';
 import { SignInPortalPage } from '@/components/auth/SignInPortalPage';
 import { MobileEntryPage } from '@/components/mobile/MobileEntryPage';
+import { SymptomChecker } from '@/components/ai/SymptomChecker';
+import { Bot } from 'lucide-react';
 
 export default function Home() {
   const { role, isAuthenticated, switchRole } = useAuth();
@@ -41,6 +43,7 @@ export default function Home() {
   const [isAuditTrailOpen, setIsAuditTrailOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
+  const [isSymptomCheckerOpen, setIsSymptomCheckerOpen] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
   // Unauthenticated view: 'pitch' (desktop page 1), 'signin' (page 2), or 'mobile_entry' (mobile 2-option hub)
@@ -72,11 +75,8 @@ export default function Home() {
     const mobileDetected = isStandalone || isMobileViewport || isMobileUA || forceMobile;
     setIsMobile(mobileDetected);
 
-    if (mobileDetected) {
-      setUnauthView('mobile_entry');
-    } else {
-      setUnauthView('pitch');
-    }
+    // Default to the main Landing Pitch page so the user always sees the comprehensive landing page
+    setUnauthView('pitch');
 
     const handleResize = () => {
       const isMobileNow = window.innerWidth < 768 || window.matchMedia('(display-mode: standalone)').matches;
@@ -125,6 +125,30 @@ export default function Home() {
     }
   }, [role]);
 
+  const renderAiAssistantTrigger = () => (
+    <>
+      <button
+        onClick={() => setIsSymptomCheckerOpen(true)}
+        className="fixed bottom-5 right-5 z-[80] flex items-center gap-2.5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 active:scale-95 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-2xl transition-all border border-teal-400/40 text-xs sm:text-sm font-semibold"
+        aria-label="Open AI Health Assistant"
+        title="AI Symptom Checker & Clinical Triage"
+      >
+        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+          <Bot className="w-4 h-4 text-white" />
+        </div>
+        <span className="font-bold tracking-wide">AI Health Assistant</span>
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+        </span>
+      </button>
+
+      {isSymptomCheckerOpen && (
+        <SymptomChecker onClose={() => setIsSymptomCheckerOpen(false)} />
+      )}
+    </>
+  );
+
   if (!mounted) {
     return null;
   }
@@ -145,6 +169,7 @@ export default function Home() {
           {isEmergencyOpen && (
             <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
           )}
+          {renderAiAssistantTrigger()}
         </>
       );
     }
@@ -152,11 +177,34 @@ export default function Home() {
     // 2. DESKTOP PAGE 1: Landing Pitch / Marketing & Stats
     if (unauthView === 'pitch') {
       return (
-        <LandingPitchPage
-          onNavigateToSignIn={() => setUnauthView('signin')}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
-        />
+        <>
+          <LandingPitchPage
+            onNavigateToSignIn={() => setUnauthView('signin')}
+            onSelectRole={(r) => {
+              setSelectedLoginRole(r as Role | 'patient');
+              setIsLoginModalOpen(true);
+            }}
+            onOpenEmergency={() => setIsEmergencyOpen(true)}
+            isDarkMode={isDarkMode}
+            onToggleDarkMode={toggleDarkMode}
+          />
+          {isLoginModalOpen && selectedLoginRole !== 'patient' && (
+            <StaffLoginModal 
+              onClose={() => {
+                setIsLoginModalOpen(false);
+                setSelectedLoginRole(undefined);
+              }}
+              initialRole={selectedLoginRole}
+            />
+          )}
+          {isLoginModalOpen && selectedLoginRole === 'patient' && (
+            <PatientDownloadModal onClose={() => setIsLoginModalOpen(false)} />
+          )}
+          {isEmergencyOpen && (
+            <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
+          )}
+          {renderAiAssistantTrigger()}
+        </>
       );
     }
 
@@ -196,6 +244,7 @@ export default function Home() {
         {isEmergencyOpen && (
           <EmergencyHelpModal onClose={() => setIsEmergencyOpen(false)} />
         )}
+        {renderAiAssistantTrigger()}
       </>
     );
   }
@@ -326,6 +375,8 @@ export default function Home() {
       {isAuditTrailOpen && (
         <AuditTrailModal onClose={() => setIsAuditTrailOpen(false)} />
       )}
+
+      {renderAiAssistantTrigger()}
     </AppShell>
   );
 }
