@@ -20,10 +20,14 @@ import {
   WifiOff,
   Database,
   FileText,
+  Bot,
+  Mic,
+  Sparkles,
 } from 'lucide-react';
 import { CitizenAbhaRegistrationModal } from '@/components/citizen/CitizenAbhaRegistrationModal';
 import { NearbyPhcMapModal } from '@/components/citizen/NearbyPhcMapModal';
 import { PatientDownloadModal } from '@/components/auth/PatientDownloadModal';
+import { VoiceAiChatModal } from '@/components/ai/VoiceAiChatModal';
 
 interface RuralCitizenPageProps {
   onBack: () => void;
@@ -137,32 +141,32 @@ const FEATURES: FeatureItem[] = [
     },
   },
   {
-    id: 'appointments',
-    icon: CalendarCheck,
+    id: 'voice_ai',
+    icon: Bot,
     color: 'violet',
     title: {
-      en: 'Appointments & Follow-ups',
-      kn: 'ನೇಮಕಾತಿಗಳು ಮತ್ತು ಫಾಲೋ-ಅಪ್',
-      hi: 'अपॉइंटमेंट और फॉलो-अप',
-      ta: 'சந்திப்புகள் மற்றும் பின்தொடர்தல்',
-      te: 'అపాయింట్‌మెంట్‌లు & ఫాలో-అప్‌లు',
-      mr: 'भेट व पाठपुरावा',
+      en: 'AI Voice Health Assistant & Doctor Chat',
+      kn: 'AI ಧ್ವನಿ ಆರೋಗ್ಯ ಸಹಾಯಕ ಮತ್ತು ವೈದ್ಯರ ಚಾಟ್',
+      hi: 'AI वॉयस स्वास्थ्य सहायक और डॉक्टर चैट',
+      ta: 'AI குரல் சுகாதார உதவியாளர் & மருத்துவர் அரட்டை',
+      te: 'AI వాయిస్ ఆరోగ్య సహాయకుడు & డాక్టర్ సంప్రదింపు',
+      mr: 'AI व्हॉइस आरोग्य सहाय्यक व डॉक्टर चॅट',
     },
     desc: {
-      en: 'View your upcoming appointments and receive follow-up reminders for treatments and check-ups.',
-      kn: 'ನಿಮ್ಮ ಮುಂಬರುವ ವೈದ್ಯಕೀಯ ಭೇಟಿಗಳನ್ನು ವೀಕ್ಷಿಸಿ ಮತ್ತು ಫಾಲೋ-ಅಪ್ ಜ್ಞಾಪನೆಗಳನ್ನು ಸ್ವೀಕರಿಸಿ.',
-      hi: 'अपनी आगामी डॉक्टर मुलाकातों को देखें और उपचार व जांच के लिए रिमाइंडर प्राप्त करें।',
-      ta: 'உங்கள் வரவிருக்கும் மருத்துவ சந்திப்புகளைப் பார்க்கவும் மற்றும் நினைவூட்டல்களைப் பெறவும்.',
-      te: 'మీ రాబోయే వైద్య నియామకాలను చూడండి మరియు తదుపరి రిమైండర్‌లను పొందండి.',
-      mr: 'आपल्या येणाऱ्या भेटी पाहा आणि उपचार व तपासणींसाठी पाठपुरावा स्मरणपत्रे मिळवा.',
+      en: 'Speak your symptoms in voice in your mother tongue. AI responds in text with instant triage guidance, PHC advice, and doctor visits.',
+      kn: 'ನಿಮ್ಮ ಮಾತೃಭಾಷೆಯಲ್ಲಿ ಧ್ವನಿಯ ಮೂಲಕ ರೋಗಲಕ್ಷಣಗಳನ್ನು ಹೇಳಿ. AI ತಪಾಸಣೆ, ಹತ್ತಿರದ ಪಿಎಚ್‌ಸಿ ಮತ್ತು ಆರೈಕೆಯ ಬಗ್ಗೆ ತಕ್ಷಣ ಮಾರ್ಗದರ್ಶನ ನೀಡುತ್ತದೆ.',
+      hi: 'अपनी आवाज में मातृभाषा में लक्षण बताएं। AI जांच, निकटतम पीएचसी और डॉक्टर परामर्श पर तुरंत मार्गदर्शन देगा।',
+      ta: 'உங்கள் தாய்மொழியில் குரலில் அறிகுறிகளைக் கூறுங்கள். AI பரிசோதித்து ஆரம்ப சுகாதார நிலையம் மற்றும் உடனடி வழிகாட்டலை வழங்கும்.',
+      te: 'మీ మాతృభాషలో స్వరంతో లక్షణాలను చెప్పండి. AI తక్షణ పరిశీలన, సమీప పీహెచ్‌సీ మరియు తగిన సలహాలను అందిస్తుంది.',
+      mr: 'आपल्या भाषेत बोलून लक्षणे सांगा. AI तात्काळ तपासणी, प्राथमिक आरोग्य केंद्र व उपचारांचे मार्गदर्शन करेल.',
     },
     action: {
-      en: 'View Appointments',
-      kn: 'ಭೇಟಿಗಳನ್ನು ವೀಕ್ಷಿಸಿ',
-      hi: 'अपॉइंटमेंट देखें',
-      ta: 'சந்திப்புகளைப் பார்',
-      te: 'అపాయింట్‌మెంట్‌లను చూడండి',
-      mr: 'भेट पाहा',
+      en: 'Start Voice AI Chat',
+      kn: 'ಧ್ವನಿ AI ಚಾಟ್ ಪ್ರಾರಂಭಿಸಿ',
+      hi: 'वॉयस AI चैट शुरू करें',
+      ta: 'குரல் AI அரட்டையைத் தொடங்கு',
+      te: 'వాయిస్ AI చాట్ ప్రారంభించండి',
+      mr: 'व्हॉइस AI चॅट सुरू करा',
     },
   },
   {
@@ -254,6 +258,7 @@ export function RuralCitizenPage({
   const [isAbhaModalOpen, setIsAbhaModalOpen] = useState(false);
   const [isPhcMapModalOpen, setIsPhcMapModalOpen] = useState(false);
   const [isEhrModalOpen, setIsEhrModalOpen] = useState(false);
+  const [isVoiceAiModalOpen, setIsVoiceAiModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -442,6 +447,8 @@ export function RuralCitizenPage({
                       setIsPhcMapModalOpen(true);
                     } else if (feature.id === 'ehr_download') {
                       setIsEhrModalOpen(true);
+                    } else if (feature.id === 'voice_ai') {
+                      setIsVoiceAiModalOpen(true);
                     } else {
                       setActiveFeature(activeFeature === feature.id ? null : feature.id);
                     }
@@ -487,6 +494,8 @@ export function RuralCitizenPage({
                             setIsPhcMapModalOpen(true);
                           } else if (feature.id === 'ehr_download') {
                             setIsEhrModalOpen(true);
+                          } else if (feature.id === 'voice_ai') {
+                            setIsVoiceAiModalOpen(true);
                           } else {
                             showToast(getText(comingSoonText, language));
                           }
@@ -495,7 +504,7 @@ export function RuralCitizenPage({
                       >
                         {getText(feature.action, language)}
                       </button>
-                      {feature.id !== 'registration' && feature.id !== 'phc' && feature.id !== 'ehr_download' && (
+                      {feature.id !== 'registration' && feature.id !== 'phc' && feature.id !== 'ehr_download' && feature.id !== 'voice_ai' && (
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                           {getText(comingSoonText, language)}
                         </span>
@@ -532,6 +541,33 @@ export function RuralCitizenPage({
       {isEhrModalOpen && (
         <PatientDownloadModal onClose={() => setIsEhrModalOpen(false)} />
       )}
+
+      {/* ── MULTILINGUAL VOICE AI CHATBOT MODAL ── */}
+      {isVoiceAiModalOpen && (
+        <VoiceAiChatModal onClose={() => setIsVoiceAiModalOpen(false)} />
+      )}
+
+      {/* ── FLOATING VOICE AI ACTION BUTTON (PATIENT VOICE INPUT) ── */}
+      <button
+        onClick={() => setIsVoiceAiModalOpen(true)}
+        className="fixed bottom-6 right-6 z-40 px-4 py-3 rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 text-white font-black text-xs shadow-2xl flex items-center gap-2.5 transition-all active:scale-95 cursor-pointer ring-4 ring-emerald-500/20 group"
+        title="Open AI Voice Health Assistant"
+      >
+        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+          <Mic className="w-3.5 h-3.5 animate-pulse text-white" />
+        </div>
+        <span>
+          {getText({
+            en: 'Voice AI Health Chat',
+            kn: 'AI ಧ್ವನಿ ಆರೋಗ್ಯ ಚಾಟ್',
+            hi: 'AI वॉयस स्वास्थ्य चैट',
+            ta: 'AI குரல் சுகாதார அரட்டை',
+            te: 'AI వాయిస్ ఆరోగ్య చాట్',
+            mr: 'AI व्हॉइस आरोग्य चॅट',
+          }, language)}
+        </span>
+        <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+      </button>
 
       {/* ── TOAST ── */}
       {toastMsg && (
