@@ -75,6 +75,7 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
   const [speechTranscript, setSpeechTranscript] = useState('');
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -149,35 +150,54 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
       if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = speechLangMap[language];
+        setSpeechSupported(true);
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = false;
+          recognition.interimResults = true;
+          recognition.lang = speechLangMap[language] || 'en-IN';
 
-        recognition.onstart = () => {
-          setIsListening(true);
-          setSpeechTranscript('');
-        };
+          recognition.onstart = () => {
+            setIsListening(true);
+            setMicError(null);
+            setSpeechTranscript('');
+          };
 
-        recognition.onresult = (event: any) => {
-          let currentTranscript = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            currentTranscript += event.results[i][0].transcript;
-          }
-          setSpeechTranscript(currentTranscript);
-          setInput(currentTranscript);
-        };
+          recognition.onresult = (event: any) => {
+            let fullTranscript = '';
+            for (let i = 0; i < event.results.length; i++) {
+              fullTranscript += event.results[i][0].transcript;
+            }
+            setSpeechTranscript(fullTranscript);
+            setInput(fullTranscript);
+          };
 
-        recognition.onerror = (event: any) => {
-          console.warn('Speech recognition status:', event.error);
-          setIsListening(false);
-        };
+          recognition.onerror = (event: any) => {
+            console.warn('Speech recognition status:', event.error);
+            setIsListening(false);
+            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+              setMicError(
+                getLoc({
+                  en: 'Microphone permission blocked. Please enable microphone permission in your browser URL bar.',
+                  kn: 'ಮೈಕ್ರೋಫೋನ್ ಅನುಮತಿ ನಿರ್ಬಂಧಿಸಲಾಗಿದೆ. ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಮೈಕ್ರೋಫೋನ್ ಪ್ರವೇಶವನ್ನು ಅನುಮತಿಸಿ.',
+                  hi: 'माइक्रोफ़ोन अनुमति अवरुद्ध है। कृपया अपने ब्राउज़र में माइक की अनुमति दें।',
+                  ta: 'மைக் அனுமதி தடுக்கப்பட்டுள்ளது. உலாவியில் மைக் அணுகலை அனுமதிக்கவும்.',
+                  te: 'మైక్రోఫోన్ అనుమతి నిరోధించబడింది. బ్రౌజర్‌లో మైక్ యాక్సెస్‌ను అనుమతించండి.',
+                  mr: 'मायक्रोफोन परवानगी अवरोधित आहे. कृपया ब्राउझरमध्ये मायक्रोफोन परवानगी द्या.',
+                })
+              );
+            }
+          };
 
-        recognition.onend = () => {
-          setIsListening(false);
-        };
+          recognition.onend = () => {
+            setIsListening(false);
+          };
 
-        recognitionRef.current = recognition;
+          recognitionRef.current = recognition;
+        } catch (err) {
+          console.error('Failed to create SpeechRecognition instance:', err);
+          setSpeechSupported(false);
+        }
       } else {
         setSpeechSupported(false);
       }
@@ -195,14 +215,14 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
   // Toggle Voice Recording
   const handleToggleListening = () => {
     if (!speechSupported) {
-      alert(
+      setMicError(
         getLoc({
-          en: 'Speech recognition is not supported in this browser. Please type your message.',
-          kn: 'ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ. ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ.',
-          hi: 'इस ब्राउज़र में वॉयस रिकग्निशन समर्थित नहीं है। कृपया टाइप करें।',
-          ta: 'குரல் உள்ளீடு இந்த உலாவியில் ஆதரிக்கப்படவில்லை. தட்டச்சு செய்யவும்.',
-          te: 'ఈ బ్రౌజర్‌లో వాయిస్ గుర్తింపు మద్దతు లేదు. దయచేసి టైప్ చేయండి.',
-          mr: 'या ब्राउझरमध्ये व्हॉइस ओळख समर्थित नाही. कृपया टाइप करा.',
+          en: 'Speech recognition is not supported in this browser. Please use the quick symptom samples below or type your message.',
+          kn: 'ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಳಗಿನ ಮಾದರಿ ಧ್ವನಿ ವಾಕ್ಯಗಳನ್ನು ಬಳಸಿ ಅಥವಾ ಟೈಪ್ ಮಾಡಿ.',
+          hi: 'इस ब्राउज़र में वॉयस रिकग्निशन समर्थित नहीं है। कृपया नीचे दिए गए सैंपल वाक्यों का उपयोग करें या टाइप करें।',
+          ta: 'குரல் உள்ளீடு இந்த உலாவியில் ஆதரிக்கப்படவில்லை. கீழே உள்ள மாதிரி வாக்கியங்களை பயன்படுத்தவும்.',
+          te: 'ఈ బ్రౌజర్‌లో వాయిస్ గుర్తింపు మద్దతు లేదు. దయచేసి క్రింది నమూనాలను ఉపయోగించండి లేదా టైప్ చేయండి.',
+          mr: 'या ब्राउझरमध्ये व्हॉइस ओळख समर्थित नाही. कृपया खालील नमुने वापरा किंवा टाइप करा.',
         })
       );
       return;
@@ -213,19 +233,29 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
         recognitionRef.current?.stop();
       } catch (_) {}
       setIsListening(false);
-      if (input.trim()) {
-        handleSendMessage(input.trim(), true);
+      const toSend = (speechTranscript || input).trim();
+      if (toSend) {
+        handleSendMessage(toSend, true);
       }
     } else {
+      setMicError(null);
       try {
         setInput('');
         setSpeechTranscript('');
         if (recognitionRef.current) {
-          recognitionRef.current.lang = speechLangMap[language];
+          recognitionRef.current.lang = speechLangMap[language] || 'en-IN';
           recognitionRef.current.start();
         }
       } catch (err) {
-        console.error('Error starting speech recognition:', err);
+        console.warn('Error starting speech recognition:', err);
+        try {
+          recognitionRef.current?.abort();
+          setTimeout(() => {
+            try {
+              recognitionRef.current?.start();
+            } catch (_) {}
+          }, 150);
+        } catch (_) {}
       }
     }
   };
@@ -671,6 +701,45 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
     };
   };
 
+  const sampleVoicePhrases: Record<Language, string[]> = {
+    en: [
+      'Severe chest pain and sweating',
+      'High fever since 2 days',
+      'Snake bite on leg',
+      'Pregnancy health checkup',
+    ],
+    kn: [
+      'ಎದೆ ನೋವು ಮತ್ತು ಉಸಿರಾಟದ ತೊಂದರೆ',
+      'ಎರಡು ದಿನಗಳಿಂದ ತೀವ್ರ ಜ್ವರ',
+      'ಹಾವು ಕಡಿತವಾಗಿದೆ',
+      'ಗರ್ಭಾವಸ್ಥೆಯ ತಪಾಸಣೆ',
+    ],
+    hi: [
+      'सीने में तेज दर्द और सांस फूलना',
+      'दो दिन से तेज बुखार है',
+      'सांप ने पैर में काट लिया है',
+      'गर्भावस्था नियमित जांच',
+    ],
+    ta: [
+      'மார்பில் கடுமையான வலி மற்றும் மூச்சுத்திணறல்',
+      'இரண்டு நாட்களாக கடுமையான காய்ச்சல்',
+      'பாம்பு கடித்தது',
+      'கர்ப்பகால பரிசோதனை',
+    ],
+    te: [
+      'ఛాతీలో నొప్పి మరియు శ్వాస ఆడకపోవడం',
+      'రెండు రోజులుగా తీవ్రమైన జ్వరం',
+      'పాము కాటు వేసింది',
+      'గర్భధారణ తనిఖీ',
+    ],
+    mr: [
+      'छातीत तीव्र कळ येत आहे आणि घाम फुटत आहे',
+      'दोन दिवसांपासून खूप ताप आणि अंगदुखी आहे',
+      'पायाला सर्पदंश झाला आहे',
+      'गरोदरपणातील तपासणी',
+    ],
+  };
+
   // Handle Send Message
   const handleSendMessage = (textToSend?: string, isVoiceInput: boolean = false) => {
     const text = (textToSend || input).trim();
@@ -971,6 +1040,24 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
 
         {/* ── INPUT BOX & MICROPHONE BUTTON ── */}
         <div className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
+          
+          {/* Microphone Permission / Network Warning Banner */}
+          {micError && (
+            <div className="mb-2.5 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between gap-2 animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>{micError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMicError(null)}
+                className="text-amber-600 hover:text-amber-900 font-bold text-xs p-1"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -1040,6 +1127,35 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
               <Send className="w-4 h-4" />
             </button>
           </form>
+
+          {/* Quick Clickable Voice Sample Queries */}
+          <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
+            <span className="text-slate-400 dark:text-slate-500 font-bold shrink-0 flex items-center gap-1 text-[10px]">
+              <Sparkles className="w-3 h-3 text-emerald-500" />
+              <span>
+                {getLoc({
+                  en: 'Quick Voice Prompts:',
+                  kn: 'ಧ್ವನಿ ಮಾದರಿಗಳು:',
+                  hi: 'वॉयस सैंपल:',
+                  ta: 'குரல் மாதிரிகள்:',
+                  te: 'వాయిస్ నమూనాలు:',
+                  mr: 'व्हॉइस नमुने:',
+                })}
+              </span>
+            </span>
+            {(sampleVoicePhrases[language] || sampleVoicePhrases.en).map((phrase, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSendMessage(phrase, true)}
+                className="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-semibold transition-all cursor-pointer flex items-center gap-1"
+                title="Click to speak/test this symptom in voice"
+              >
+                <Mic className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                <span>{phrase}</span>
+              </button>
+            ))}
+          </div>
 
           <div className="flex items-center justify-between mt-2 text-[10px] text-slate-400 font-medium px-1">
             <span className="flex items-center gap-1">

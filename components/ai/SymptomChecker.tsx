@@ -20,6 +20,8 @@ import {
   ChevronRight,
   Stethoscope,
   Info,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 
 // ============================================================================
@@ -745,9 +747,64 @@ export function SymptomChecker({ onClose, onTriageComplete }: SymptomCheckerProp
   const [inputValue, setInputValue] = useState('');
   const [isAssessing, setIsAssessing] = useState(false);
   const [latestTriage, setLatestTriage] = useState<TriageResult | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const rec = new SpeechRecognition();
+          rec.continuous = false;
+          rec.interimResults = true;
+          rec.lang = 'en-IN';
+          rec.onstart = () => setIsListening(true);
+          rec.onresult = (event: any) => {
+            let transcript = '';
+            for (let i = 0; i < event.results.length; i++) {
+              transcript += event.results[i][0].transcript;
+            }
+            setInputValue(transcript);
+          };
+          rec.onerror = () => setIsListening(false);
+          rec.onend = () => setIsListening(false);
+          recognitionRef.current = rec;
+        } catch (_) {}
+      }
+    }
+  }, []);
+
+  const handleToggleListening = () => {
+    if (isListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch (_) {}
+      setIsListening(false);
+      if (inputValue.trim()) {
+        handleProcessQuery(inputValue);
+      }
+    } else {
+      setInputValue('');
+      try {
+        recognitionRef.current?.start();
+      } catch (e) {
+        try {
+          recognitionRef.current?.abort();
+          setTimeout(() => {
+            try {
+              recognitionRef.current?.start();
+            } catch (_) {}
+          }, 150);
+        } catch (_) {}
+      }
+    }
+  };
 
   // Auto scroll to bottom
   const scrollToBottom = () => {
@@ -756,7 +813,7 @@ export function SymptomChecker({ onClose, onTriageComplete }: SymptomCheckerProp
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isAssessing]);
+  }, [messages, isAssessing, isListening]);
 
   // Focus input on load
   useEffect(() => {
@@ -1039,13 +1096,31 @@ export function SymptomChecker({ onClose, onTriageComplete }: SymptomCheckerProp
         {/* ================================================================== */}
         <div className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
           <form onSubmit={handleFormSubmit} className="flex items-center gap-2">
+            {/* Voice Input Microphone Button */}
+            <button
+              type="button"
+              onClick={handleToggleListening}
+              className={`p-3 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0 ${
+                isListening
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse ring-2 ring-rose-500'
+                  : 'bg-teal-600 hover:bg-teal-700 text-white active:scale-95'
+              }`}
+              title={isListening ? 'Stop Listening' : 'Speak symptoms in voice'}
+            >
+              <Mic className="w-5 h-5" />
+            </button>
+
             <div className="relative flex-1">
               <input
                 ref={inputRef}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type symptoms (e.g. fever + headache + body ache)..."
+                placeholder={
+                  isListening
+                    ? 'Listening to your voice... Speak now'
+                    : 'Type symptoms or tap mic to speak in voice...'
+                }
                 disabled={isAssessing}
                 className="w-full bg-slate-50 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 focus:border-teal-500 dark:focus:border-teal-400 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none transition-all pr-10 disabled:opacity-60"
               />
@@ -1063,7 +1138,7 @@ export function SymptomChecker({ onClose, onTriageComplete }: SymptomCheckerProp
             <button
               type="submit"
               disabled={!inputValue.trim() || isAssessing}
-              className="bg-teal-600 hover:bg-teal-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-teal-600/20 flex items-center justify-center gap-2 shrink-0"
+              className="bg-teal-600 hover:bg-teal-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-teal-600/20 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
             >
               <Send className="w-4 h-4" />
               <span className="hidden sm:inline">Check</span>
