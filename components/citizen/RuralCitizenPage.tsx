@@ -20,6 +20,8 @@ import {
   WifiOff,
   Database,
 } from 'lucide-react';
+import { CitizenAbhaRegistrationModal } from '@/components/citizen/CitizenAbhaRegistrationModal';
+import { NearbyPhcMapModal } from '@/components/citizen/NearbyPhcMapModal';
 
 interface RuralCitizenPageProps {
   onBack: () => void;
@@ -211,6 +213,8 @@ export function RuralCitizenPage({
   const { language } = useLanguage();
   const { effectiveOnline } = useSync();
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  const [isAbhaModalOpen, setIsAbhaModalOpen] = useState(false);
+  const [isPhcMapModalOpen, setIsPhcMapModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -393,8 +397,13 @@ export function RuralCitizenPage({
                 {/* Card Header */}
                 <button
                   onClick={() => {
-                    setActiveFeature(activeFeature === feature.id ? null : feature.id);
-                    showToast(`${getText(feature.title, language)} — ${getText(comingSoonText, language)}`);
+                    if (feature.id === 'registration') {
+                      setIsAbhaModalOpen(true);
+                    } else if (feature.id === 'phc') {
+                      setIsPhcMapModalOpen(true);
+                    } else {
+                      setActiveFeature(activeFeature === feature.id ? null : feature.id);
+                    }
                   }}
                   className="w-full p-4 sm:p-5 text-left flex items-center gap-4 cursor-pointer group"
                 >
@@ -430,14 +439,24 @@ export function RuralCitizenPage({
                     </p>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => showToast(getText(comingSoonText, language))}
+                        onClick={() => {
+                          if (feature.id === 'registration') {
+                            setIsAbhaModalOpen(true);
+                          } else if (feature.id === 'phc') {
+                            setIsPhcMapModalOpen(true);
+                          } else {
+                            showToast(getText(comingSoonText, language));
+                          }
+                        }}
                         className={`px-4 py-2 rounded-xl ${c.btn} text-white text-xs font-black transition-all cursor-pointer shadow-xs`}
                       >
                         {getText(feature.action, language)}
                       </button>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                        {getText(comingSoonText, language)}
-                      </span>
+                      {feature.id !== 'registration' && feature.id !== 'phc' && (
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                          {getText(comingSoonText, language)}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -455,6 +474,16 @@ export function RuralCitizenPage({
         </div>
 
       </main>
+
+      {/* ── ABHA REGISTRATION MODAL ── */}
+      {isAbhaModalOpen && (
+        <CitizenAbhaRegistrationModal onClose={() => setIsAbhaModalOpen(false)} />
+      )}
+
+      {/* ── REAL-TIME PHC MAP MODAL ── */}
+      {isPhcMapModalOpen && (
+        <NearbyPhcMapModal onClose={() => setIsPhcMapModalOpen(false)} />
+      )}
 
       {/* ── TOAST ── */}
       {toastMsg && (
