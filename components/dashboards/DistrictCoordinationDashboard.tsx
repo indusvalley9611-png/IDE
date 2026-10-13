@@ -1,1241 +1,1108 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/context/SyncContext';
+import { StockTransfer, Facility } from '@/lib/types';
+import { Language } from '@/lib/translations';
 import {
-  getMedicineStatus,
-  getAvailableResource,
-  getFacilityStatus,
-  getDistanceKm,
-  getTriageUrgencyMeta,
-} from '@/lib/resourceManagement';
-import {
-  generateSmartReallocationRecommendations,
-  calculateReferralRiskScore,
-  createTamperEvidentBlock,
-  computeDistrictSlaMetrics,
-  GENESIS_HASH,
-} from '@/lib/dhoIntelligenceEngine';
-import {
-  Referral,
-  Facility,
-  Patient,
-  StockTransfer,
-  SmartReallocationRecommendation,
-  StateEscalation,
-  TamperEvidentAuditBlock,
-  DhoNotification,
-} from '@/lib/types';
-import {
-  INITIAL_STATE_ESCALATIONS,
-  INITIAL_TAMPER_AUDIT_BLOCKS,
-  INITIAL_DHO_NOTIFICATIONS,
-} from '@/lib/mockData';
-import { DistrictReferralReviewModal } from './DistrictReferralReviewModal';
-import { SmartReallocationModal } from '../dho/SmartReallocationModal';
-import { StateEscalationModal } from '../dho/StateEscalationModal';
-import { TamperEvidentAuditView } from '../dho/TamperEvidentAuditView';
-import { DhoNotificationDrawer } from '../dho/DhoNotificationDrawer';
-import { DistrictFacilityMapView } from '../dho/DistrictFacilityMapView';
-import { DistrictTrackingCenter } from '../dho/DistrictTrackingCenter';
-import {
-  BarChart3,
-  Users,
-  ShieldCheck,
-  Building2,
-  Package,
-  Search,
-  ChevronRight,
-  ArrowRight,
-  ArrowLeft,
-  HeartPulse,
-  CheckCircle2,
-  Bed,
+  Tablets,
   Truck,
-  Eye,
-  AlertOctagon,
-  Flame,
+  CheckCircle2,
   Clock,
-  Radio,
-  FileCheck,
-  Sparkles,
-  MapPin,
-  Pill,
-  RefreshCw,
   AlertTriangle,
-  Activity,
+  Search,
+  Plus,
+  ArrowRight,
+  ArrowLeftRight,
+  Building2,
+  ShieldCheck,
+  X,
+  Package,
+  RefreshCw,
+  Send,
+  Check,
+  AlertOctagon,
+  Calendar,
   Layers,
-  Phone,
+  Sparkles,
 } from 'lucide-react';
 
 export interface DistrictCoordinationDashboardProps {
-  onOpenBedMatrix: () => void;
-  onOpenStockLedger: () => void;
+  onOpenBedMatrix?: () => void;
+  onOpenStockLedger?: () => void;
   onOpenAuditLogs?: () => void;
-  onOpenPatientTimeline?: (patient: Patient) => void;
-  onOpenReferralToken?: (referral: Referral) => void;
-  activeTab?: DistrictTab;
-  onTabChange?: (tab: DistrictTab) => void;
+  onOpenPatientTimeline?: (patient: any) => void;
+  onOpenReferralToken?: (referral: any) => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export type DistrictTab =
-  | 'overview'
-  | 'map'
-  | 'capacity'
-  | 'tertiary'
-  | 'reallocation'
-  | 'escalations'
-  | 'audit'
-  | 'track_medicine'
-  | 'track_referrals'
-  | 'track_patients';
+type TransferFilterTab =
+  | 'ALL'
+  | 'PHC_TO_DISTRICT'
+  | 'DISTRICT_TO_PHC'
+  | 'PENDING'
+  | 'DISPATCHED'
+  | 'COMPLETED'
+  | 'CRITICAL';
 
 export function DistrictCoordinationDashboard({
   onOpenBedMatrix,
   onOpenStockLedger,
-  onOpenAuditLogs,
-  onOpenPatientTimeline,
-  onOpenReferralToken,
-  activeTab: externalTab,
-  onTabChange,
 }: DistrictCoordinationDashboardProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
   const {
+    stockTransfers,
     facilities,
     stocks,
-    referrals,
-    patients,
-    updateReferralStatus,
-    stockTransfers,
+    processStockTransfer,
+    createStockTransfer,
   } = useSync();
 
-  // Active navigation tab
-  const [internalTab, setInternalTab] = useState<DistrictTab>(externalTab || 'overview');
-  const activeTab = externalTab !== undefined ? externalTab : internalTab;
-  const setActiveTab = (tab: DistrictTab) => {
-    setInternalTab(tab);
-    if (onTabChange) onTabChange(tab);
+  const getLoc = (dict: Record<Language, string>): string => {
+    return dict[language] || dict.en;
   };
 
-  // Referral Filter state inside Referrals view
-  const [referralFilter, setReferralFilter] = useState<'ALL' | 'CRITICAL' | 'PENDING' | 'ACCEPTED' | 'ADMITTED' | 'COMPLETED'>('ALL');
+  // Local state
+  const [filterTab, setFilterTab] = useState<TransferFilterTab>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPhcFilter, setSelectedPhcFilter] = useState<string>('ALL');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // Modals & Overlays state
-  const [activeReviewReferral, setActiveReviewReferral] = useState<Referral | null>(null);
-  const [activeReallocationItem, setActiveReallocationItem] = useState<SmartReallocationRecommendation | null>(null);
-  const [isEscalationModalOpen, setIsEscalationModalOpen] = useState(false);
+  // Modals
+  const [isNewTransferOpen, setIsNewTransferOpen] = useState(false);
+  const [activeDispatchItem, setActiveDispatchItem] = useState<StockTransfer | null>(null);
+  const [activeRejectItem, setActiveRejectItem] = useState<StockTransfer | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [dispatchTransportMode, setDispatchTransportMode] = useState<
+    'DISTRICT_MEDICAL_COURIER' | '108_AMBULANCE' | 'FACILITY_TRANSPORT' | 'POLICE_GREEN_CORRIDOR'
+  >('DISTRICT_MEDICAL_COURIER');
+  const [dispatchConsignmentCode, setDispatchConsignmentCode] = useState('');
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
-  // State-level & Reallocation data stored in state
-  const [stateEscalations, setStateEscalations] = useState<StateEscalation[]>(INITIAL_STATE_ESCALATIONS);
-  const [tamperBlocks, setTamperBlocks] = useState<TamperEvidentAuditBlock[]>(INITIAL_TAMPER_AUDIT_BLOCKS);
-  const [notifications, setNotifications] = useState<DhoNotification[]>(INITIAL_DHO_NOTIFICATIONS);
-  const [reallocationResourceFilter, setReallocationResourceFilter] = useState<'ALL' | 'MEDICINE' | 'ICU_BEDS' | 'AMBULANCE' | 'BLOOD_UNITS'>('ALL');
-  const [approvedReallocations, setApprovedReallocations] = useState<string[]>([]);
+  // Form State for New Transfer
+  const [newDirection, setNewDirection] = useState<'PHC_TO_DISTRICT' | 'DISTRICT_TO_PHC'>('PHC_TO_DISTRICT');
+  const [newSourcePhcId, setNewSourcePhcId] = useState('');
+  const [newMedicineName, setNewMedicineName] = useState('Anti-Snake Venom (ASV Polyvalent Lyophilized)');
+  const [newQuantity, setNewQuantity] = useState<number>(20);
+  const [newUrgency, setNewUrgency] = useState<'ROUTINE' | 'URGENT' | 'CRITICAL'>('URGENT');
+  const [newTransportMode, setNewTransportMode] = useState<
+    'DISTRICT_MEDICAL_COURIER' | '108_AMBULANCE' | 'FACILITY_TRANSPORT' | 'POLICE_GREEN_CORRIDOR'
+  >('DISTRICT_MEDICAL_COURIER');
+  const [newReason, setNewReason] = useState('Medicine buffer rebalance and transfer from Primary Health Centre to District Central Warehouse.');
 
-  // Current district scope
-  const currentDistrict = user?.district || 'Pune';
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
 
-  // Filter facilities scoped strictly to current district
-  const districtFacilities = useMemo(() => {
-    return facilities.filter((f) => {
-      if (f.district?.toLowerCase() === currentDistrict.toLowerCase()) return true;
-      if (f.name.toLowerCase().includes(currentDistrict.toLowerCase())) return true;
-      if (currentDistrict.toLowerCase() === 'pune') {
-        const name = f.name.toLowerCase();
-        return name.includes('aundh') || name.includes('velhe') || name.includes('nasrapur') || name.includes('bhor') || name.includes('pune') || name.includes('sassoon');
-      }
-      if (currentDistrict.toLowerCase() === 'nashik') {
-        const name = f.name.toLowerCase();
-        return name.includes('nashik') || name.includes('malegaon') || name.includes('sinnar') || name.includes('niphad') || name.includes('trimbakeshwar') || name.includes('chandwad') || name.includes('yeola') || name.includes('igatpuri');
-      }
-      return true;
-    });
+  const currentDistrict = user?.district || 'Bengaluru Urban';
+
+  // Get list of PHC facilities
+  const phcFacilities = useMemo(() => {
+    const phcs = facilities.filter((f) => f.type === 'PHC' || f.type === 'Sub-Centre');
+    if (phcs.length > 0) return phcs;
+    return facilities;
+  }, [facilities]);
+
+  // District Hospital / Central Warehouse facility
+  const districtCentralFacility = useMemo(() => {
+    const dh = facilities.find((f) => f.type === 'District Hospital' || f.type === 'Rural Hospital');
+    if (dh) return dh;
+    return {
+      id: 'fac-dh-central',
+      name: `${currentDistrict} District Central Medical Warehouse`,
+      type: 'District Hospital',
+    } as Facility;
   }, [facilities, currentDistrict]);
 
-  // District facility names for matching referrals
-  const districtFacilityNames = useMemo(() => {
-    const names = new Set<string>();
-    districtFacilities.forEach((f) => {
-      names.add(f.name.toLowerCase());
-      if (f.id) names.add(f.id.toLowerCase());
-    });
-    return names;
-  }, [districtFacilities]);
+  // Filter transfers
+  const filteredTransfers = useMemo(() => {
+    let list = stockTransfers || [];
 
-  // Scoped referrals belonging to this district
-  const districtReferrals = useMemo(() => {
-    return (referrals || []).filter((r) => {
-      const from = (r.referringFacility || '').toLowerCase();
-      const to = (r.targetFacility || '').toLowerCase();
-      for (const name of districtFacilityNames) {
-        if (from.includes(name) || to.includes(name)) return true;
-      }
-      return true;
-    });
-  }, [referrals, districtFacilityNames]);
+    // Filter by tab
+    if (filterTab === 'PHC_TO_DISTRICT') {
+      list = list.filter((t) => {
+        const dest = (t.destinationFacilityName || '').toLowerCase();
+        const src = (t.sourceFacilityName || '').toLowerCase();
+        return (dest.includes('district') || dest.includes('hospital') || dest.includes('warehouse')) ||
+          (src.includes('phc') || src.includes('primary') || src.includes('centre'));
+      });
+    } else if (filterTab === 'DISTRICT_TO_PHC') {
+      list = list.filter((t) => {
+        const src = (t.sourceFacilityName || '').toLowerCase();
+        const dest = (t.destinationFacilityName || '').toLowerCase();
+        return (src.includes('district') || src.includes('hospital') || src.includes('warehouse')) ||
+          (dest.includes('phc') || dest.includes('primary') || dest.includes('centre'));
+      });
+    } else if (filterTab === 'PENDING') {
+      list = list.filter((t) => t.status === 'PENDING' || t.status === 'PENDING_SOURCE_APPROVAL');
+    } else if (filterTab === 'DISPATCHED') {
+      list = list.filter((t) => t.status === 'DISPATCHED');
+    } else if (filterTab === 'COMPLETED') {
+      list = list.filter((t) => t.status === 'COMPLETED');
+    } else if (filterTab === 'CRITICAL') {
+      list = list.filter((t) => t.urgency === 'CRITICAL' || t.isEmergency);
+    }
 
-  // District drug stocks
-  const districtStocks = useMemo(() => {
-    return (stocks || []).filter((s) => {
-      const facName = (s.facilityName || '').toLowerCase();
-      for (const name of districtFacilityNames) {
-        if (facName.includes(name)) return true;
-      }
-      return true;
-    });
-  }, [stocks, districtFacilityNames]);
+    // Filter by specific PHC
+    if (selectedPhcFilter !== 'ALL') {
+      list = list.filter(
+        (t) => t.sourceFacilityId === selectedPhcFilter || t.destinationFacilityId === selectedPhcFilter
+      );
+    }
 
-  // Smart Reallocations from real data
-  const smartRecommendations = useMemo(() => {
-    return generateSmartReallocationRecommendations(districtFacilities, districtStocks);
-  }, [districtFacilities, districtStocks]);
+    // Search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (t) =>
+          t.medicineName.toLowerCase().includes(q) ||
+          t.sourceFacilityName.toLowerCase().includes(q) ||
+          t.destinationFacilityName.toLowerCase().includes(q) ||
+          (t.consignmentCode || '').toLowerCase().includes(q) ||
+          (t.reason || '').toLowerCase().includes(q)
+      );
+    }
 
-  // Critical referrals in district (Red priority & not closed)
-  const criticalReferrals = useMemo(() => {
-    return districtReferrals.filter(
-      (r) => r.triagePriority === 'red' && r.status !== 'COMPLETED' && r.status !== 'CANCELLED'
-    );
-  }, [districtReferrals]);
+    return list;
+  }, [stockTransfers, filterTab, selectedPhcFilter, searchQuery]);
 
-  // Pending triage referrals
-  const pendingTriageReferrals = useMemo(() => {
-    return districtReferrals.filter((r) => r.status === 'PENDING');
-  }, [districtReferrals]);
-
-  // Active referrals count (non-completed, non-cancelled)
-  const activeReferralsCount = useMemo(() => {
-    return districtReferrals.filter((r) => r.status !== 'COMPLETED' && r.status !== 'CANCELLED').length;
-  }, [districtReferrals]);
-
-  // Admitted patients count
-  const admittedPatientsCount = useMemo(() => {
-    return districtReferrals.filter((r) => r.status === 'ADMITTED').length;
-  }, [districtReferrals]);
-
-  // Critical medicine shortages (Stock <= 30% of buffer or out of stock)
-  const criticalStockItems = useMemo(() => {
-    return districtStocks.filter((item) => {
-      const status = getMedicineStatus(item);
-      return status === 'CRITICAL' || status === 'LIMITED';
-    });
-  }, [districtStocks]);
-
-  // Active stock transfers / medicine requests in district
-  const activeDistrictTransfers = useMemo(() => {
-    return (stockTransfers || []).filter((t) => t.status === 'PENDING' || t.status === 'PENDING_SOURCE_APPROVAL' || t.status === 'DISPATCHED');
-  }, [stockTransfers]);
-
-  // Total bed calculations from real facility data
-  const bedStats = useMemo(() => {
-    let total = 0;
-    let occupied = 0;
-    let icuTotal = 0;
-    let icuOccupied = 0;
-    let ventTotal = 0;
-    let ventOccupied = 0;
-    let oxygenTotal = 0;
-    let oxygenOccupied = 0;
-
-    districtFacilities.forEach((f) => {
-      total += f.totalBeds || 0;
-      occupied += f.occupiedBeds || 0;
-      icuTotal += f.icuBedsTotal || 0;
-      icuOccupied += f.icuBedsOccupied || 0;
-      ventTotal += f.ventilatorsTotal || 0;
-      ventOccupied += f.ventilatorsOccupied || 0;
-      oxygenTotal += f.oxygenBedsTotal || 0;
-      oxygenOccupied += f.oxygenBedsOccupied || 0;
-    });
-
-    const overallPct = total > 0 ? Math.round((occupied / total) * 100) : 0;
-    const icuPct = icuTotal > 0 ? Math.round((icuOccupied / icuTotal) * 100) : 0;
+  // KPI Metrics
+  const kpis = useMemo(() => {
+    const all = stockTransfers || [];
+    const pending = all.filter((t) => t.status === 'PENDING' || t.status === 'PENDING_SOURCE_APPROVAL').length;
+    const dispatched = all.filter((t) => t.status === 'DISPATCHED').length;
+    const completed = all.filter((t) => t.status === 'COMPLETED').length;
+    const critical = all.filter((t) => t.urgency === 'CRITICAL' || t.isEmergency).length;
 
     return {
-      total,
-      occupied,
-      available: total - occupied,
-      overallPct,
-      icuTotal,
-      icuOccupied,
-      icuAvailable: icuTotal - icuOccupied,
-      icuPct,
-      ventTotal,
-      ventOccupied,
-      ventAvailable: ventTotal - ventOccupied,
-      oxygenTotal,
-      oxygenOccupied,
-      oxygenAvailable: oxygenTotal - oxygenOccupied,
+      total: all.length,
+      pending,
+      dispatched,
+      completed,
+      critical,
     };
-  }, [districtFacilities]);
+  }, [stockTransfers]);
 
-  // Facilities under heavy load (>80% occupied)
-  const highLoadFacilities = useMemo(() => {
-    return districtFacilities.filter(f => f.totalBeds > 0 && (f.occupiedBeds / f.totalBeds) >= 0.8);
-  }, [districtFacilities]);
-
-  // Open / pending state escalations
-  const openEscalations = useMemo(() => {
-    return stateEscalations.filter(e => e.status === 'PENDING' || e.status === 'ACKNOWLEDGED');
-  }, [stateEscalations]);
-
-  // Total "Needs Attention" count — 100% computed from real data
-  const totalNeedsAttention =
-    pendingTriageReferrals.length +
-    criticalStockItems.filter(s => getMedicineStatus(s) === 'CRITICAL').length +
-    highLoadFacilities.length +
-    openEscalations.length;
-
-  // Filtered referrals list for Referrals view
-  const displayedReferrals = useMemo(() => {
-    const list = districtReferrals.filter((r) => {
-      if (referralFilter === 'CRITICAL' && r.triagePriority !== 'red') return false;
-      if (referralFilter === 'PENDING' && r.status !== 'PENDING') return false;
-      if (referralFilter === 'ACCEPTED' && r.status !== 'ACCEPTED') return false;
-      if (referralFilter === 'ADMITTED' && r.status !== 'ADMITTED') return false;
-      if (referralFilter === 'COMPLETED' && r.status !== 'COMPLETED') return false;
-
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const pName = (r.patientName || '').toLowerCase();
-        const pId = (r.patientId || '').toLowerCase();
-        const code = (r.tokenCode || r.id || '').toLowerCase();
-        const reason = (r.referralReason || '').toLowerCase();
-        const from = (r.referringFacility || '').toLowerCase();
-        return pName.includes(q) || pId.includes(q) || code.includes(q) || reason.includes(q) || from.includes(q);
+  // Handle Approve
+  const handleApprove = async (transferId: string) => {
+    setIsActionLoading(true);
+    try {
+      const success = await processStockTransfer(transferId, 'APPROVE');
+      if (success) {
+        showToast(getLoc({
+          en: `Transfer ${transferId} approved successfully. Ready for dispatch.`,
+          kn: `ವರ್ಗಾವಣೆ ${transferId} ಯಶಸ್ವಿಯಾಗಿ ಅನುಮೋದಿಸಲಾಗಿದೆ. ರವಾನೆಗೆ ಸಿದ್ಧವಾಗಿದೆ.`,
+          hi: `हस्तांतरण ${transferId} सफलतापूर्वक स्वीकृत। डिस्पैच के लिए तैयार।`,
+          ta: `பரிமாற்றம் ${transferId} வெற்றிகரமாக அங்கீகரிக்கப்பட்டது.`,
+          te: `బదిలీ ${transferId} విజయవంతంగా ఆమోదించబడింది.`,
+          mr: `हस्तांतरण ${transferId} यशस्वीरित्या मंजूर करण्यात आले.`,
+        }));
       }
-      return true;
-    });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
-    return list.sort((a, b) => {
-      const scoreA = calculateReferralRiskScore(a, null, districtFacilities).compositeScore;
-      const scoreB = calculateReferralRiskScore(b, null, districtFacilities).compositeScore;
-      return scoreB - scoreA;
-    });
-  }, [districtReferrals, referralFilter, searchQuery, districtFacilities]);
+  // Open Dispatch Modal
+  const handleOpenDispatch = (item: StockTransfer) => {
+    setActiveDispatchItem(item);
+    setDispatchConsignmentCode(`CONS-${Date.now().toString().slice(-6)}`);
+    setDispatchTransportMode(item.transportMode || 'DISTRICT_MEDICAL_COURIER');
+  };
 
-  // Dynamic Recent Activity Timeline from real existing data
-  const recentActivities = useMemo(() => {
-    const events: Array<{
-      id: string;
-      title: string;
-      description: string;
-      timestamp: string;
-      type: 'REFERRAL' | 'ADMISSION' | 'TRANSFER' | 'COMPLETED' | 'AUDIT';
-    }> = [];
-
-    districtReferrals.forEach((r) => {
-      if (r.status === 'COMPLETED') {
-        events.push({
-          id: `act-comp-${r.id}`,
-          title: 'Referral Completed',
-          description: `${r.patientName || 'Patient'} care cycle resolved via ${r.targetFacility || 'District Facility'}`,
-          timestamp: r.createdAt || new Date().toISOString(),
-          type: 'COMPLETED',
-        });
-      } else if (r.status === 'ADMITTED') {
-        events.push({
-          id: `act-adm-${r.id}`,
-          title: 'Patient Admitted',
-          description: `${r.patientName || 'Patient'} admitted to ${r.targetFacility || 'District Hospital'} (${r.specialtyRequired || 'General'})`,
-          timestamp: r.createdAt || new Date().toISOString(),
-          type: 'ADMISSION',
-        });
-      } else if (r.status === 'ACCEPTED') {
-        events.push({
-          id: `act-acc-${r.id}`,
-          title: 'Referral Accepted',
-          description: `${r.patientName || 'Patient'} from ${r.referringFacility} accepted at ${r.targetFacility}`,
-          timestamp: r.createdAt || new Date().toISOString(),
-          type: 'REFERRAL',
-        });
-      }
-    });
-
-    (stockTransfers || []).forEach((t) => {
-      if (t.status === 'DISPATCHED' || t.status === 'COMPLETED') {
-        events.push({
-          id: `act-trf-${t.id}`,
-          title: 'Medicine Transfer Dispatched',
-          description: `${t.requestedQuantity || 10} units of ${t.medicineName} dispatched from ${t.sourceFacilityName || 'Source'} to ${t.destinationFacilityName || 'Destination'}`,
-          timestamp: t.createdAt || new Date().toISOString(),
-          type: 'TRANSFER',
-        });
-      }
-    });
-
-    tamperBlocks.slice(0, 3).forEach((b) => {
-      events.push({
-        id: `act-aud-${b.index}`,
-        title: `Tamper Audit: ${b.action}`,
-        description: `${b.actorName} (${b.actorRole}): ${b.reason}`,
-        timestamp: b.timestamp,
-        type: 'AUDIT',
+  // Submit Dispatch
+  const handleConfirmDispatch = async () => {
+    if (!activeDispatchItem) return;
+    setIsActionLoading(true);
+    try {
+      const success = await processStockTransfer(activeDispatchItem.id, 'DISPATCH', undefined, {
+        consignmentCode: dispatchConsignmentCode || `CONS-${Date.now().toString().slice(-6)}`,
+        transportMode: dispatchTransportMode,
+        dispatchedByUserName: user?.name || 'District Medical Logistics Officer',
       });
+      if (success) {
+        showToast(getLoc({
+          en: `Consignment ${dispatchConsignmentCode} dispatched via ${dispatchTransportMode.replace(/_/g, ' ')}.`,
+          kn: `ಸರಕು ರವಾನಿಸಲಾಗಿದೆ: ${dispatchConsignmentCode}.`,
+          hi: `कंसाइनमेंट ${dispatchConsignmentCode} डिस्पैच किया गया।`,
+          ta: `சரக்கு ${dispatchConsignmentCode} அனுப்பப்பட்டது.`,
+          te: `రవాణా ${dispatchConsignmentCode} పంపబడింది.`,
+          mr: `कन्साइनमेंट ${dispatchConsignmentCode} रवाना करण्यात आले.`,
+        }));
+        setActiveDispatchItem(null);
+      }
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Confirm Receipt at District
+  const handleConfirmReceive = async (transferId: string) => {
+    setIsActionLoading(true);
+    try {
+      const success = await processStockTransfer(transferId, 'RECEIVE', undefined, {
+        receivedByUserName: user?.name || 'District Warehouse Superintendent',
+      });
+      if (success) {
+        showToast(getLoc({
+          en: `Transfer ${transferId} received at District Warehouse. Stock inventories updated!`,
+          kn: `ವರ್ಗಾವಣೆ ${transferId} ಜಿಲ್ಲಾ ಉಗ್ರಾಣದಲ್ಲಿ ಸ್ವೀಕರಿಸಲಾಗಿದೆ. ದಾಸ್ತಾನು ನವೀಕರಿಸಲಾಗಿದೆ!`,
+          hi: `हस्तांतरण ${transferId} जिला गोदाम में प्राप्त। स्टॉक अपडेट किया गया!`,
+          ta: `பரிமாற்றம் ${transferId} மாவட்ட கிடங்கில் பெறப்பட்டது. சரக்கு இருப்பு புதுப்பிக்கப்பட்டது!`,
+          te: `బదిలీ ${transferId} జిల్లా గిడ్డంగిలో స్వీకరించబడింది. స్టాక్ అప్‌డేట్ చేయబడింది!`,
+          mr: `हस्तांतरण ${transferId} जिल्हा गोदामात प्राप्त झाले व साठा अद्यतनित झाला!`,
+        }));
+      }
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Handle Reject Modal
+  const handleOpenReject = (item: StockTransfer) => {
+    setActiveRejectItem(item);
+    setRejectReason('');
+  };
+
+  const handleConfirmReject = async () => {
+    if (!activeRejectItem || !rejectReason.trim()) return;
+    setIsActionLoading(true);
+    try {
+      const success = await processStockTransfer(activeRejectItem.id, 'REJECT', rejectReason);
+      if (success) {
+        showToast(getLoc({
+          en: `Transfer ${activeRejectItem.id} rejected. Reason logged.`,
+          kn: `ವರ್ಗಾವಣೆ ${activeRejectItem.id} ತಿರಸ್ಕರಿಸಲಾಗಿದೆ. ಕಾರಣ ದಾಖಲಿಸಲಾಗಿದೆ.`,
+          hi: `हस्तांतरण ${activeRejectItem.id} अस्वीकृत। कारण दर्ज किया गया।`,
+          ta: `பரிமாற்றம் ${activeRejectItem.id} நிராகரிக்கப்பட்டது.`,
+          te: `బదిలీ ${activeRejectItem.id} తిరస్కరించబడింది.`,
+          mr: `हस्तांतरण ${activeRejectItem.id} नाकारण्यात आले.`,
+        }));
+        setActiveRejectItem(null);
+      }
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Submit New Transfer
+  const handleCreateTransfer = (e: React.FormEvent) => {
+    e.preventDefault();
+    const sourceFacility = phcFacilities.find((f) => f.id === newSourcePhcId) || phcFacilities[0];
+    if (!sourceFacility) return;
+
+    const sourceName = newDirection === 'PHC_TO_DISTRICT' ? sourceFacility.name : districtCentralFacility.name;
+    const sourceId = newDirection === 'PHC_TO_DISTRICT' ? sourceFacility.id : districtCentralFacility.id;
+    const destName = newDirection === 'PHC_TO_DISTRICT' ? districtCentralFacility.name : sourceFacility.name;
+    const destId = newDirection === 'PHC_TO_DISTRICT' ? districtCentralFacility.id : sourceFacility.id;
+
+    const created = createStockTransfer({
+      medicineName: newMedicineName,
+      sourceStockId: `stk-${sourceId}-01`,
+      destinationStockId: `stk-${destId}-01`,
+      sourceFacilityId: sourceId,
+      sourceFacilityName: sourceName,
+      destinationFacilityId: destId,
+      destinationFacilityName: destName,
+      requestedQuantity: Number(newQuantity) || 10,
+      urgency: newUrgency,
+      reason: newReason,
+      isEmergency: newUrgency === 'CRITICAL',
+      transportMode: newTransportMode,
+      consignmentCode: `CONS-TRF-${Date.now().toString().slice(-5)}`,
     });
 
-    return events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 6);
-  }, [districtReferrals, stockTransfers, tamperBlocks]);
-
-  // Cryptographic Audit Block Helper
-  const recordTamperAudit = async (
-    action: string,
-    resource: string,
-    reason: string,
-    beforeState?: Record<string, unknown>,
-    afterState?: Record<string, unknown>
-  ) => {
-    const lastBlock = tamperBlocks[tamperBlocks.length - 1];
-    const prevHash = lastBlock ? lastBlock.hash : GENESIS_HASH;
-    const newBlock = await createTamperEvidentBlock({
-      index: tamperBlocks.length + 1,
-      prevHash,
-      actorId: user?.id || 'dho-9611',
-      actorName: user?.name || 'Dr. Vinod Chavan',
-      actorRole: 'district_officer',
-      action,
-      resource,
-      reason,
-      beforeState: beforeState || {},
-      afterState: afterState || {},
-    });
-    setTamperBlocks(prev => [...prev, newBlock]);
-  };
-
-  // Reallocation Approval Handler
-  const handleApproveReallocation = (rec: SmartReallocationRecommendation, reason: string) => {
-    setApprovedReallocations(prev => [...prev, rec.id]);
-    recordTamperAudit(
-      'APPROVE_SMART_REALLOCATION',
-      `${rec.resourceType}: ${rec.recommendedQuantity} ${rec.unit} from ${rec.sourceFacilityName} -> ${rec.destinationFacilityName}`,
-      reason,
-      { status: 'RECOMMENDED', urgency: rec.urgency },
-      { status: 'DISPATCHED_AUTHORIZED', approvedBy: user?.name || 'DHO', authorizedAt: new Date().toISOString() }
-    );
-  };
-
-  // Reallocation Reject Handler
-  const handleRejectReallocation = (rec: SmartReallocationRecommendation, reason: string) => {
-    setApprovedReallocations(prev => [...prev, rec.id]);
-    recordTamperAudit(
-      'REJECT_SMART_REALLOCATION',
-      `${rec.resourceType}: ${rec.recommendedQuantity} ${rec.unit} from ${rec.sourceFacilityName} -> ${rec.destinationFacilityName}`,
-      reason,
-      { status: 'RECOMMENDED', urgency: rec.urgency },
-      { status: 'REJECTED_BY_DHO', rejectedBy: user?.name || 'DHO', reason }
-    );
-  };
-
-  const handleOpenReferral = (ref: Referral) => {
-    setActiveReviewReferral(ref);
+    if (created) {
+      showToast(getLoc({
+        en: `New Medicine Transfer initiated: ${newMedicineName} (${newQuantity} units).`,
+        kn: `ಹೊಸ ಔಷಧಿ ವರ್ಗಾವಣೆ ಪ್ರಾರಂಭಿಸಲಾಗಿದೆ: ${newMedicineName} (${newQuantity} ಯೂನಿಟ್‌ಗಳು).`,
+        hi: `नया दवा हस्तांतरण शुरू किया गया: ${newMedicineName} (${newQuantity} यूनिट)।`,
+        ta: `புதிய மருந்து பரிமாற்றம் தொடங்கப்பட்டது: ${newMedicineName} (${newQuantity} அலகுகள்).`,
+        te: `కొత్త ఔషధ బదిలీ ప్రారంభించబడింది: ${newMedicineName} (${newQuantity} యూనిట్లు).`,
+        mr: `नवीन औषध हस्तांतरण सुरू झाले: ${newMedicineName} (${newQuantity} युनिट).`,
+      }));
+      setIsNewTransferOpen(false);
+    }
   };
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-300 pb-16">
-      {/* ── 1. COMPACT GOVERNMENT-GRADE DISTRICT HEADER ── */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
-            <Building2 className="w-6 h-6 text-white" />
+    <div className="space-y-5 animate-in fade-in duration-200 pb-16">
+      
+      {/* ── TOAST NOTIFICATION ── */}
+      {toastMsg && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-in slide-in-from-top-3">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs font-bold">{toastMsg}</span>
+        </div>
+      )}
+
+      {/* ── 1. DISTRICT MEDICINE HEADER ── */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-blue-950 border border-slate-800 rounded-3xl p-5 sm:p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/30">
+            <Tablets className="w-7 h-7 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                DISTRICT HEALTH CONTROL CENTER
+              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                {getLoc({
+                  en: 'DISTRICT HEALTH CONTROL',
+                  kn: 'ಜಿಲ್ಲಾ ಆರೋಗ್ಯ ನಿಯಂತ್ರಣ',
+                  hi: 'जिला स्वास्थ्य नियंत्रण',
+                  ta: 'மாவட்ட சுகாதார கட்டுப்பாடு',
+                  te: 'జిల్లా ఆరోగ్య నియంత్రణ',
+                  mr: 'जिल्हा आरोग्य नियंत्रण',
+                })}
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                LIVE OPERATIONS
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{getLoc({
+                  en: 'PHC Supply Grid Active',
+                  kn: 'ಪಿಎಚ್‌ಸಿ ಪೂರೈಕೆ ಜಾಲ ಸಕ್ರಿಯ',
+                  hi: 'पीएचसी आपूर्ति ग्रिड सक्रिय',
+                  ta: 'பிஎச்சி விநியோக கட்டமைப்பு செயலில் உள்ளது',
+                  te: 'పీహెచ్‌సీ సరఫరా గ్రిడ్ యాక్టివ్',
+                  mr: 'पीएचसी पुरवठा ग्रिड सक्रिय',
+                })}</span>
               </span>
             </div>
-            <h1 className="text-lg sm:text-xl font-black text-white mt-1 flex items-center gap-2">
-              <span>{currentDistrict} District Health Operations</span>
+
+            <h1 className="text-xl sm:text-2xl font-black text-white mt-1.5">
+              {getLoc({
+                en: `${currentDistrict} · PHC to District Medicine Transfers`,
+                kn: `${currentDistrict} · ಪಿಎಚ್‌ಸಿಯಿಂದ ಜಿಲ್ಲಾ ಔಷಧಿ ವರ್ಗಾವಣೆಗಳು`,
+                hi: `${currentDistrict} · पीएचसी से जिला दवा हस्तांतरण`,
+                ta: `${currentDistrict} · பிஎச்சியிலிருந்து மாவட்ட மருந்து பரிமாற்றங்கள்`,
+                te: `${currentDistrict} · పీహెచ్‌సీ నుండి జిల్లా ఔషధ బదిలీలు`,
+                mr: `${currentDistrict} · पीएचसी ते जिल्हा औषध हस्तांतरण`,
+              })}
             </h1>
-            <p className="text-xs text-slate-400">
-              {user?.name || 'Dr. Vinod Chavan'} &bull; {user?.roleTitleEn || 'District Health Officer / Civil Surgeon'} &bull; Public Health Dept
+
+            <p className="text-xs text-slate-400 mt-1">
+              {getLoc({
+                en: 'Direct management of all medicine consignments, requisitions, and cold-chain transfers between Primary Health Centres and the District Central Warehouse.',
+                kn: 'ಪ್ರಾಥಮಿಕ ಆರೋಗ್ಯ ಕೇಂದ್ರಗಳು ಮತ್ತು ಜಿಲ್ಲಾ ಕೇಂದ್ರ ಉಗ್ರಾಣದ ನಡುವಿನ ಎಲ್ಲಾ ಔಷಧಿ ರವಾನೆಗಳು ಮತ್ತು ವರ್ಗಾವಣೆಗಳ ನೇರ ನಿರ್ವಹಣೆ.',
+                hi: 'प्राथमिक स्वास्थ्य केंद्रों और जिला केंद्रीय गोदाम के बीच सभी दवा कंसाइनमेंट और हस्तांतरण का प्रत्यक्ष प्रबंधन।',
+                ta: 'ஆரம்ப சுகாதார நிலையங்களுக்கும் மாவட்ட மத்திய கிடங்கிற்கும் இடையிலான அனைத்து மருந்து பரிமாற்றங்களின் நேரடி மேலாண்மை.',
+                te: 'ప్రాథమిక ఆరోగ్య కేంద్రాలు మరియు జిల్లా కేంద్ర గిడ్డంగి మధ్య అన్ని ఔషధ బదిలీల ప్రత్యక్ష నిర్వహణ.',
+                mr: 'प्राथमिक आरोग्य केंद्रे व जिल्हा मध्यवर्ती गोदामामधील सर्व औषध हस्तांतरणांचे थेट व्यवस्थापन.',
+              })}
             </p>
           </div>
         </div>
 
-        {/* Quick Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <DhoNotificationDrawer
-            notifications={notifications}
-            onSelectNotification={(notif) => {
-              if (notif.targetTab) setActiveTab(notif.targetTab as DistrictTab);
-            }}
-            onMarkAllAsRead={() => {
-              setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-            }}
-          />
-
+        {/* Action Button: Create New Transfer */}
+        <div className="shrink-0 flex items-center gap-2">
           <button
-            onClick={() => setIsEscalationModalOpen(true)}
-            className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            onClick={() => setIsNewTransferOpen(true)}
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 cursor-pointer active:scale-95"
           >
-            <Radio className="w-3.5 h-3.5" />
-            <span>Escalate to State</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('reallocation')}
-            className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Resource Reallocate</span>
+            <Plus className="w-4 h-4" />
+            <span>{getLoc({
+              en: 'Initiate Medicine Transfer',
+              kn: 'ಔಷಧಿ ವರ್ಗಾವಣೆ ಪ್ರಾರಂಭಿಸಿ',
+              hi: 'दवा हस्तांतरण शुरू करें',
+              ta: 'மருந்து பரிமாற்றத்தை தொடங்கு',
+              te: 'ఔషధ బదిలీని ప్రారంభించండి',
+              mr: 'नवीन औषध हस्तांतरण सुरू करा',
+            })}</span>
           </button>
         </div>
       </div>
 
-      {/* ── BREADCRUMB WHEN ON SUBTAB ── */}
-      {activeTab !== 'overview' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 shadow-xs flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition-all flex items-center gap-1 cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Command Center</span>
-            </button>
-            <span className="text-slate-300 dark:text-slate-600">/</span>
-            <span className="font-extrabold text-slate-900 dark:text-white capitalize">
-              {activeTab === 'map'
-                ? 'District Facility Map (GIS)'
-                : activeTab === 'capacity'
-                ? 'Hospital Capacity & ICU Grid'
-                : activeTab === 'tertiary'
-                ? 'Referral Risk Queue & Triage'
-                : activeTab === 'reallocation'
-                ? 'Resource Reallocation Engine'
-                : activeTab === 'escalations'
-                ? 'State Health Authority Escalations'
-                : activeTab === 'audit'
-                ? 'Cryptographic Tamper-Evident Audit Trail'
-                : activeTab === 'track_medicine'
-                ? 'Track Medicine Requests & Transfers'
-                : activeTab === 'track_referrals'
-                ? 'Track Referrals'
-                : 'Track Patient Care Journeys'}
+      {/* ── 2. KPI METRICS CARDS (FOCUSED 100% ON MEDICINE TRANSFERS) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        {/* Total Transfers */}
+        <div
+          onClick={() => setFilterTab('ALL')}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${
+            filterTab === 'ALL'
+              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+              {getLoc({ en: 'Total Transfers', kn: 'ಒಟ್ಟು ವರ್ಗಾವಣೆಗಳು', hi: 'कुल हस्तांतरण', ta: 'மொத்த பரிமாற்றங்கள்', te: 'మొత్తం బదిలీలు', mr: 'एकूण हस्तांतरण' })}
             </span>
+            <Layers className="w-4 h-4 text-slate-400" />
           </div>
-
-          <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-bold text-[11px] border border-blue-200 dark:border-blue-800">
-            {currentDistrict} District
-          </span>
+          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1.5">
+            {kpis.total}
+          </div>
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            {getLoc({ en: 'Across all health centres', kn: 'ಎಲ್ಲಾ ಆರೋಗ್ಯ ಕೇಂದ್ರಗಳಲ್ಲಿ', hi: 'सभी केंद्रों में', ta: 'அனைத்து மையங்களிலும்', te: 'అన్ని కేంద్రాలలో', mr: 'सर्व केंद्रांमध्ये' })}
+          </p>
         </div>
-      )}
 
-      {/* ── 2. COMMAND CENTER (HOME OVERVIEW) ── */}
-      {activeTab === 'overview' && (
-        <div className="space-y-5">
-          {/* TOP 4 OPERATIONAL KPI TILES (100% CALCULATED FROM REAL DATA) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Tile 1: Needs Attention */}
-            <div
-              onClick={() => {
-                if (pendingTriageReferrals.length > 0) setActiveTab('tertiary');
-                else if (criticalStockItems.length > 0) setActiveTab('track_medicine');
-                else if (highLoadFacilities.length > 0) setActiveTab('capacity');
-              }}
-              className="p-3.5 sm:p-4 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-rose-400 transition-all cursor-pointer shadow-xs"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Needs Attention</span>
-                <div className={`w-2 h-2 rounded-full ${totalNeedsAttention > 0 ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
-              </div>
-              <div className="flex items-baseline gap-2 mt-1.5">
-                <span className={`text-2xl font-black ${totalNeedsAttention > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                  {totalNeedsAttention}
-                </span>
-                <span className="text-xs text-slate-500">Action Items</span>
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                {pendingTriageReferrals.length} pending triage &bull; {criticalStockItems.length} low stocks
-              </p>
-            </div>
+        {/* Pending Approvals */}
+        <div
+          onClick={() => setFilterTab('PENDING')}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${
+            filterTab === 'PENDING'
+              ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-400'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              {getLoc({ en: 'Pending Approval', kn: 'ಅನುಮೋದನೆ ಬಾಕಿ', hi: 'स्वीकृति लंबित', ta: 'ஒப்புதல் நிலுவை', te: 'ఆమోదం పెండింగ్', mr: 'मंजुरी प्रलंबित' })}
+            </span>
+            <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1.5">
+            {kpis.pending}
+          </div>
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            {getLoc({ en: 'Awaiting DHO authorization', kn: 'DHO ಅನುಮೋದನೆ ನಿರೀಕ್ಷೆಯಲ್ಲಿದೆ', hi: 'डीएचओ अनुमोदन की प्रतीक्षा', ta: 'DHO ஒப்புதலுக்காக காத்திருக்கிறது', te: 'DHO ఆమోదం కోసం వేచి ఉంది', mr: 'DHO मंजुरीची प्रतीक्षा' })}
+          </p>
+        </div>
 
-            {/* Tile 2: Critical Referrals */}
-            <div
-              onClick={() => setActiveTab('tertiary')}
-              className="p-3.5 sm:p-4 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-400 transition-all cursor-pointer shadow-xs"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Critical Referrals</span>
-                <HeartPulse className="w-4 h-4 text-rose-500" />
-              </div>
-              <div className="flex items-baseline gap-2 mt-1.5">
-                <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                  {criticalReferrals.length}
-                </span>
-                <span className="text-xs text-slate-500">of {activeReferralsCount} Active</span>
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                {admittedPatientsCount} patients admitted in district
-              </p>
-            </div>
+        {/* In-Transit (Dispatched) */}
+        <div
+          onClick={() => setFilterTab('DISPATCHED')}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${
+            filterTab === 'DISPATCHED'
+              ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-500 ring-2 ring-purple-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-400'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
+              {getLoc({ en: 'In Transit', kn: 'ರವಾನೆಯಲ್ಲಿರುವವು', hi: 'मार्ग में (डिस्पैच)', ta: 'வழியில் உள்ளது', te: 'రవాణాలో ఉంది', mr: 'मार्गावर (रवाना)' })}
+            </span>
+            <Truck className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className="text-2xl font-black text-purple-600 dark:text-purple-400 mt-1.5">
+            {kpis.dispatched}
+          </div>
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            {getLoc({ en: 'Couriers & 108 Ambulances', kn: 'ಕೊರಿಯರ್ ಮತ್ತು 108 ಆಂಬ್ಯುಲೆನ್ಸ್‌ಗಳು', hi: 'कूरियर और 108 एम्बुलेंस', ta: 'கூரியர் மற்றும் 108 ஆம்புலன்ஸ்', te: 'కొరియర్ మరియు 108 అంబులెన్స్', mr: 'कुरिअर व 108 रुग्णवाहिका' })}
+          </p>
+        </div>
 
-            {/* Tile 3: Medicine Shortages */}
-            <div
-              onClick={() => setActiveTab('track_medicine')}
-              className="p-3.5 sm:p-4 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-400 transition-all cursor-pointer shadow-xs"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Medicine Deficits</span>
-                <Pill className="w-4 h-4 text-amber-500" />
-              </div>
-              <div className="flex items-baseline gap-2 mt-1.5">
-                <span className={`text-2xl font-black ${criticalStockItems.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                  {criticalStockItems.length}
-                </span>
-                <span className="text-xs text-slate-500">Items Under Buffer</span>
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                {activeDistrictTransfers.length} active transfer consignments
-              </p>
-            </div>
+        {/* Completed / Received */}
+        <div
+          onClick={() => setFilterTab('COMPLETED')}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${
+            filterTab === 'COMPLETED'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-400'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              {getLoc({ en: 'Received at District', kn: 'ಜಿಲ್ಲೆಯಲ್ಲಿ ಸ್ವೀಕರಿಸಲಾಗಿದೆ', hi: 'जिले में प्राप्त', ta: 'மாவட்டத்தில் பெறப்பட்டது', te: 'జిల్లాలో స్వీకరించబడింది', mr: 'जिल्ह्यात प्राप्त' })}
+            </span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5">
+            {kpis.completed}
+          </div>
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            {getLoc({ en: 'Stock verified in ledger', kn: 'ದಾಸ್ತಾನು ಲೆಕ್ಕದಲ್ಲಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ', hi: 'स्टॉक सत्यापित किया गया', ta: 'சரக்கு சரிபார்க்கப்பட்டது', te: 'స్టాక్ ధృవీకరించబడింది', mr: 'साठा नोंदवहीत नोंदवला' })}
+          </p>
+        </div>
 
-            {/* Tile 4: Bed & ICU Capacity */}
-            <div
-              onClick={() => setActiveTab('capacity')}
-              className="p-3.5 sm:p-4 rounded-xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-400 transition-all cursor-pointer shadow-xs"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Hospital Capacity</span>
-                <Bed className="w-4 h-4 text-purple-500" />
-              </div>
-              <div className="flex items-baseline gap-2 mt-1.5">
-                <span className="text-2xl font-black text-purple-600 dark:text-purple-400">
-                  {bedStats.overallPct}%
-                </span>
-                <span className="text-xs text-slate-500">Occupied ({bedStats.available} Free)</span>
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                ICU: {bedStats.icuAvailable} / {bedStats.icuTotal} free &bull; Vent: {bedStats.ventAvailable} free
-              </p>
-            </div>
+        {/* Critical Emergency */}
+        <div
+          onClick={() => setFilterTab('CRITICAL')}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs col-span-2 lg:col-span-1 ${
+            filterTab === 'CRITICAL'
+              ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-500 ring-2 ring-rose-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-rose-400'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400">
+              {getLoc({ en: 'Critical Lifesaving', kn: 'ತುರ್ತು ಜೀವರಕ್ಷಕ', hi: 'आपातकालीन जीवनरक्षक', ta: 'முக்கிய அவசர மருந்துகள்', te: 'అత్యవసర ప్రాణరక్షక', mr: 'तातडीची जीवरक्षक औषधे' })}
+            </span>
+            <AlertOctagon className="w-4 h-4 text-rose-500" />
+          </div>
+          <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1.5">
+            {kpis.critical}
+          </div>
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            {getLoc({ en: 'ASV, ARV, & Obstetric drugs', kn: 'ASV, ARV, ಹೆರಿಗೆ ಔಷಧಗಳು', hi: 'एआरवी, एएसवी, प्रसूति दवाएं', ta: 'ஏஎஸ்வி, ஏஆர்வி மருந்துகள்', te: 'ఏఎస్‌వీ, ఏఆర్‌వీ మందులు', mr: 'ASV, ARV व प्रसूती औषधे' })}
+          </p>
+        </div>
+      </div>
+
+      {/* ── 3. FILTER, TABS & SEARCH BAR ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+            {[
+              { id: 'ALL', label: getLoc({ en: 'All Transfers', kn: 'ಎಲ್ಲಾ ವರ್ಗಾವಣೆಗಳು', hi: 'सभी हस्तांतरण', ta: 'அனைத்து பரிமாற்றங்கள்', te: 'అన్ని బదిలీలు', mr: 'सर्व हस्तांतरण' }) },
+              { id: 'PHC_TO_DISTRICT', label: getLoc({ en: 'PHC ➔ District', kn: 'ಪಿಎಚ್‌ಸಿ ➔ ಜಿಲ್ಲಾ', hi: 'पीएचसी ➔ जिला', ta: 'பிஎச்சி ➔ மாவட்டம்', te: 'పీహెచ్‌సీ ➔ జిల్లా', mr: 'पीएचसी ➔ जिल्हा' }) },
+              { id: 'DISTRICT_TO_PHC', label: getLoc({ en: 'District ➔ PHC', kn: 'ಜಿಲ್ಲಾ ➔ ಪಿಎಚ್‌ಸಿ', hi: 'जिला ➔ पीएचसी', ta: 'மாவட்டம் ➔ பிஎச்சி', te: 'జిల్లా ➔ పీహెచ్‌సీ', mr: 'जिल्हा ➔ पीएचसी' }) },
+              { id: 'PENDING', label: getLoc({ en: 'Pending', kn: 'ಬಾಕಿ ಉಳಿದವು', hi: 'लंबित', ta: 'நிலுவை', te: 'పెండింగ్', mr: 'प्रलंबित' }) },
+              { id: 'DISPATCHED', label: getLoc({ en: 'In Transit', kn: 'ರವಾನೆಯಲ್ಲಿರುವವು', hi: 'डिस्पैच', ta: 'வழியில்', te: 'రవాణాలో', mr: 'रवाना' }) },
+              { id: 'COMPLETED', label: getLoc({ en: 'Received', kn: 'ಸ್ವೀಕರಿಸಿದವು', hi: 'प्राप्त', ta: 'பெறப்பட்டது', te: 'స్వీకరించబడింది', mr: 'प्राप्त' }) },
+              { id: 'CRITICAL', label: getLoc({ en: 'Emergency', kn: 'ತುರ್ತು', hi: 'आपातकालीन', ta: 'அவசரம்', te: 'అత్యవసరం', mr: 'तातडीचे' }) },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterTab(tab.id as TransferFilterTab)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  filterTab === tab.id
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {/* ── SECTION 1A: PATIENT OPERATIONS (CLINICAL TRIAGE & ADMISSION QUEUE) ── */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-                  <HeartPulse className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                    Patient Actions &amp; Clinical Triage Queue
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Incoming referrals, emergency triage, admissions, and specialist escalations
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  {pendingTriageReferrals.length} Pending Referrals
-                </span>
-                <button
-                  onClick={() => setActiveTab('tertiary')}
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <span>View All</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[240px] max-w-sm">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={getLoc({
+                en: 'Search medicine, PHC name, consignment...',
+                kn: 'ಔಷಧಿ, ಪಿಎಚ್‌ಸಿ ಹೆಸರು, ಸರಕು ಹುಡುಕಿ...',
+                hi: 'दवा, पीएचसी का नाम, कंसाइनमेंट खोजें...',
+                ta: 'மருந்து, பிஎச்சி பெயர், சரக்கு எண் தேடவும்...',
+                te: 'మందు, పీహెచ్‌సీ పేరు, రవాణా కోడ్ శోధించండి...',
+                mr: 'औषध, पीएचसी नाव, कन्साइनमेंट शोधा...',
+              })}
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            />
+          </div>
 
-            {pendingTriageReferrals.length === 0 ? (
-              <div className="text-center py-6 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-                <CheckCircle2 className="w-7 h-7 text-emerald-500 mx-auto mb-1.5" />
-                <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200">Patient Referral Queue Cleared</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">All incoming patient referrals across {currentDistrict} have been reviewed and routed.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {pendingTriageReferrals.slice(0, 3).map((ref) => {
-                  const triageMeta = getTriageUrgencyMeta(ref.triagePriority, ref.urgency);
-                  return (
-                    <div
-                      key={ref.id}
-                      className={`p-3.5 rounded-xl border ${triageMeta.cardBorder} ${triageMeta.cardBg} flex flex-col justify-between gap-3`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[150px]">
-                            {ref.referringFacility}
-                          </span>
-                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded shrink-0 ${triageMeta.badgeBg}`}>
-                            {triageMeta.label}
-                          </span>
-                        </div>
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-1">
-                          {ref.patientName || 'Emergency Patient'}
-                        </h4>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
-                          <span>Specialty: <strong className="text-slate-700 dark:text-slate-200">{ref.specialtyRequired || 'General'}</strong></span>
-                          <span>&bull;</span>
-                          <span>ABHA: <strong className="text-slate-700 dark:text-slate-200">{ref.patientId || 'N/A'}</strong></span>
-                        </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 line-clamp-2">
-                          {ref.referralReason || 'Specialist care required'}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleOpenReferral(ref)}
-                        className={`w-full py-1.5 px-3 rounded-lg ${triageMeta.ctaBg} text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer`}
+        </div>
+      </div>
+
+      {/* ── 4. MEDICINE TRANSFERS LIST ── */}
+      <div className="space-y-3">
+        {filteredTransfers.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center">
+            <Package className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+            <h3 className="text-base font-black text-slate-800 dark:text-slate-200">
+              {getLoc({
+                en: 'No Medicine Transfers Found',
+                kn: 'ಯಾವುದೇ ಔಷಧಿ ವರ್ಗಾವಣೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ',
+                hi: 'कोई दवा हस्तांतरण नहीं मिला',
+                ta: 'மருந்து பரிமாற்றங்கள் எதுவும் இல்லை',
+                te: 'ఎటువంటి ఔషధ బదిలీలు కనుగొనబడలేదు',
+                mr: 'कोणतेही औषध हस्तांतरण आढळले नाही',
+              })}
+            </h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+              {getLoc({
+                en: 'No active medicine shipments match the selected filters. Use the button above to initiate a new transfer.',
+                kn: 'ಆಯ್ಕೆಮಾಡಿದ ಫಿಲ್ಟರ್‌ಗಳಿಗೆ ಯಾವುದೇ ಸಕ್ರಿಯ ರವಾನೆಗಳು ಹೊಂದಾಣಿಕೆಯಾಗುತ್ತಿಲ್ಲ.',
+                hi: 'चयनित फ़िल्टर से मेल खाता कोई सक्रिय शिपमेंट नहीं है। नया हस्तांतरण शुरू करने के लिए ऊपर दिए गए बटन का उपयोग करें।',
+                ta: 'தேர்ந்தெடுக்கப்பட்ட வடிகட்டிகளுக்கு பொருந்தும் ஏற்றுமதிகள் எதுவும் இல்லை.',
+                te: 'ఎంచుకున్న ఫిల్టర్‌లకు సరిపోలే రవాణాలు లేవు.',
+                mr: 'निवडलेल्या निकषांनुसार कोणतेही हस्तांतरण उपलब्ध नाही.',
+              })}
+            </p>
+          </div>
+        ) : (
+          filteredTransfers.map((item) => {
+            const isCritical = item.urgency === 'CRITICAL' || item.isEmergency;
+            const isPending = item.status === 'PENDING' || item.status === 'PENDING_SOURCE_APPROVAL';
+            const isApproved = item.status === 'APPROVED';
+            const isDispatched = item.status === 'DISPATCHED';
+            const isCompleted = item.status === 'COMPLETED';
+            const isRejected = item.status === 'REJECTED';
+
+            return (
+              <div
+                key={item.id}
+                className={`bg-white dark:bg-slate-900 border rounded-2xl p-4 sm:p-5 shadow-xs transition-all hover:shadow-md ${
+                  isCritical
+                    ? 'border-rose-200 dark:border-rose-900/60 bg-gradient-to-r from-rose-50/20 via-white to-white dark:from-rose-950/10'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  
+                  {/* Left Column: Details */}
+                  <div className="space-y-2 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Urgency Badge */}
+                      <span
+                        className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md ${
+                          isCritical
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
+                            : item.urgency === 'URGENT'
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-300 dark:border-blue-800'
+                        }`}
                       >
-                        <span>Review &amp; Route Referral</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                        {item.urgency}
+                      </span>
 
-          {/* ── SECTION 1B: MEDICINE & RESOURCE OPERATIONS (SUPPLY CHAIN & REALLOCATION) ── */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-                  <Pill className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                    Medicine &amp; Resource Operations
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Formulary deficit management, inter-facility supplier matching, and transfer consignments
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                  {criticalStockItems.length + activeDistrictTransfers.length} Actionable Demands
-                </span>
-                <button
-                  onClick={() => setActiveTab('track_medicine')}
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Track Logistics</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+                      {/* Status Badge */}
+                      <span
+                        className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md flex items-center gap-1.5 ${
+                          isCompleted
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                            : isDispatched
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-300 dark:border-purple-800 animate-pulse'
+                            : isApproved
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-300 dark:border-blue-800'
+                            : isRejected
+                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                        }`}
+                      >
+                        {isDispatched && <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping" />}
+                        <span>{item.status.replace(/_/g, ' ')}</span>
+                      </span>
 
-            {criticalStockItems.length === 0 && activeDistrictTransfers.length === 0 ? (
-              <div className="text-center py-6 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-                <CheckCircle2 className="w-7 h-7 text-emerald-500 mx-auto mb-1.5" />
-                <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200">Pharmacy Supply Chains Optimal</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">All essential medicines maintain healthy buffer thresholds across {currentDistrict}.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {/* 1. Critical Stock Deficits */}
-                {criticalStockItems.slice(0, 2).map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 flex flex-col justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[150px]">
-                          {item.facilityName}
+                      {/* Consignment Code */}
+                      {item.consignmentCode && (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          {item.consignmentCode}
                         </span>
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-500 text-slate-950 shrink-0">
-                          CRITICAL BUFFER
-                        </span>
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-1">
-                        {item.drugName}
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                        Current: <strong className="text-rose-600 dark:text-rose-400">{item.currentStock} {item.unit}</strong> (Min Buffer: {item.bufferStock})
-                      </p>
-                      <p className="text-[11px] text-slate-400 mt-1">
-                        Category: {item.category || 'Essential'} &bull; Batch: {item.batchNumber || 'N/A'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab('reallocation')}
-                      className="w-full py-1.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Find Surplus &amp; Reallocate</span>
-                    </button>
-                  </div>
-                ))}
-
-                {/* 2. Active Transfer Consignments */}
-                {activeDistrictTransfers.slice(0, 1).map((t) => (
-                  <div
-                    key={t.id}
-                    className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/40 dark:bg-blue-950/20 flex flex-col justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-black uppercase text-slate-500">
-                          Transfer Consignment
-                        </span>
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-600 text-white shrink-0">
-                          {t.status.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-1">
-                        {t.medicineName} ({t.requestedQuantity || 10} Units)
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-1">
-                        From: <strong className="text-slate-800 dark:text-slate-200">{t.sourceFacilityName || 'Surplus PHC'}</strong> &rarr; To: <strong className="text-slate-800 dark:text-slate-200">{t.destinationFacilityName || 'Requesting PHC'}</strong>
-                      </p>
-                      {t.supplierAvailableSurplus !== undefined && (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                          Supplier Surplus: <strong className="text-emerald-600 dark:text-emerald-400">{t.supplierAvailableSurplus}</strong> units
-                        </p>
                       )}
-                    </div>
-                    <button
-                      onClick={() => setActiveTab('track_medicine')}
-                      className="w-full py-1.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                    >
-                      <Truck className="w-3.5 h-3.5" />
-                      <span>Track Consignment</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* SECTION 2: FACILITY CAPACITY SNAPSHOT */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                  District Facility Capacity Snapshot
-                </h3>
-                <p className="text-xs text-slate-500">Actual bed and critical care availability across {currentDistrict} facilities</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab('capacity')}
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Full Table</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={onOpenBedMatrix}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer"
-                >
-                  <Bed className="w-3.5 h-3.5" />
-                  <span>Bed Matrix</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {districtFacilities.slice(0, 4).map((fac) => {
-                const total = fac.totalBeds || 0;
-                const occ = fac.occupiedBeds || 0;
-                const available = total - occ;
-                const occPct = total > 0 ? Math.round((occ / total) * 100) : 0;
-                const icuFree = (fac.icuBedsTotal || 0) - (fac.icuBedsOccupied || 0);
-
-                const statusLabel = occPct >= 90 ? 'Critical' : occPct >= 70 ? 'Limited' : 'Available';
-                const statusBadgeStyle =
-                  statusLabel === 'Critical'
-                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300'
-                    : statusLabel === 'Limited'
-                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
-                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300';
-
-                return (
-                  <div
-                    key={fac.id}
-                    onClick={() => setActiveTab('capacity')}
-                    className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-blue-400 transition-all cursor-pointer space-y-2.5"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400">{fac.type}</span>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[160px]">{fac.name}</h4>
-                      </div>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded ${statusBadgeStyle}`}>
-                        {statusLabel}
+                      {/* Created At */}
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1 ml-auto lg:ml-0">
+                        <Calendar className="w-3 h-3" />
+                        <span>{new Date(item.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                       </span>
                     </div>
 
-                    <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
-                      <div className="flex justify-between">
-                        <span>Total Beds:</span>
-                        <strong className="text-slate-900 dark:text-white">{available} / {total} free</strong>
-                      </div>
-                      {fac.icuBedsTotal > 0 && (
-                        <div className="flex justify-between">
-                          <span>ICU:</span>
-                          <strong className={icuFree === 0 ? 'text-rose-600 font-black' : 'text-purple-600 dark:text-purple-400'}>
-                            {icuFree} of {fac.icuBedsTotal} free
-                          </strong>
-                        </div>
-                      )}
+                    {/* Medicine Name & Quantity */}
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <h3 className="text-base font-black text-slate-900 dark:text-white">
+                        {item.medicineName}
+                      </h3>
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-black border border-blue-200 dark:border-blue-800">
+                        {item.requestedQuantity} Units / Vials
+                      </span>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* SECTION 3: RECENT ACTIVITY STREAM */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5">
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                  Recent District Activity Log
-                </h3>
-                <p className="text-xs text-slate-500">Live feed of referrals, admissions, and inter-facility logistics</p>
+                    {/* Route: Source PHC ➔ Destination District */}
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 flex-wrap">
+                      <div className="flex items-center gap-1.5 text-slate-900 dark:text-white">
+                        <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <span>{item.sourceFacilityName}</span>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <div className="flex items-center gap-1.5 text-slate-900 dark:text-white">
+                        <Building2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>{item.destinationFacilityName}</span>
+                      </div>
+                    </div>
+
+                    {/* Reason & Transport notes */}
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {item.reason}
+                    </p>
+
+                    {item.transportMode && (
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5 font-medium">
+                        <Truck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                        <span>Mode: <strong className="text-slate-700 dark:text-slate-200">{item.transportMode.replace(/_/g, ' ')}</strong></span>
+                        {item.dispatchedByUserName && <span>&bull; By: {item.dispatchedByUserName}</span>}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: Operational Action Buttons */}
+                  <div className="flex items-center gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800 flex-wrap">
+                    
+                    {/* 1. APPROVE BUTTON (When Pending) */}
+                    {isPending && (
+                      <>
+                        <button
+                          onClick={() => handleApprove(item.id)}
+                          disabled={isActionLoading}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>{getLoc({ en: 'Approve Transfer', kn: 'ವರ್ಗಾವಣೆ ಅನುಮೋದಿಸಿ', hi: 'हस्तांतरण स्वीकृत करें', ta: 'அங்கீகரி', te: 'ఆమోదించండి', mr: 'मंजूर करा' })}</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleOpenReject(item)}
+                          disabled={isActionLoading}
+                          className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-700 dark:text-slate-300 hover:text-rose-600 text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50"
+                        >
+                          <span>{getLoc({ en: 'Reject', kn: 'ತಿರಸ್ಕರಿಸಿ', hi: 'अस्वीकार', ta: 'நிராகரி', te: 'తిరస్కరించు', mr: 'नाकारा' })}</span>
+                        </button>
+                      </>
+                    )}
+
+                    {/* 2. DISPATCH BUTTON (When Approved) */}
+                    {isApproved && (
+                      <button
+                        onClick={() => handleOpenDispatch(item)}
+                        disabled={isActionLoading}
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
+                      >
+                        <Truck className="w-3.5 h-3.5" />
+                        <span>{getLoc({ en: 'Dispatch Consignment', kn: 'ಸರಕು ರವಾನಿಸಿ', hi: 'कंसाइनमेंट डिस्पैच करें', ta: 'சரக்கு அனுப்புக', te: 'రవాణాను పంపండి', mr: 'कन्साइनमेंट रवाना करा' })}</span>
+                      </button>
+                    )}
+
+                    {/* 3. CONFIRM RECEIPT (When Dispatched) */}
+                    {isDispatched && (
+                      <button
+                        onClick={() => handleConfirmReceive(item.id)}
+                        disabled={isActionLoading}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{getLoc({ en: 'Confirm Receipt at District', kn: 'ಜಿಲ್ಲೆಯಲ್ಲಿ ಸ್ವೀಕೃತಿ ದೃಢೀಕರಿಸಿ', hi: 'जिले में प्राप्ति की पुष्टि करें', ta: 'வரவை உறுதிசெய்', te: 'స్వీకృతిని నిర్ధారించండి', mr: 'जिल्ह्यात पावती निश्चित करा' })}</span>
+                      </button>
+                    )}
+
+                    {/* 4. COMPLETED BADGE */}
+                    {isCompleted && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-black border border-emerald-200 dark:border-emerald-800">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>{getLoc({ en: 'Verified in District Stock', kn: 'ಜಿಲ್ಲಾ ದಾಸ್ತಾನಿನಲ್ಲಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ', hi: 'जिला स्टॉक में सत्यापित', ta: 'மாவட்ட இருப்பில் சரிபார்க்கப்பட்டது', te: 'జిల్లా స్టాక్‌లో ధృవీకరించబడింది', mr: 'जिल्हा साठ्यात पडताळणी पूर्ण' })}</span>
+                      </div>
+                    )}
+
+                  </div>
+
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ── 5. MODAL: INITIATE NEW MEDICINE TRANSFER ── */}
+      {isNewTransferOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black">
+                  <Tablets className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    {getLoc({
+                      en: 'Initiate PHC ⇄ District Transfer',
+                      kn: 'ಪಿಎಚ್‌ಸಿ ⇄ ಜಿಲ್ಲಾ ವರ್ಗಾವಣೆ ಪ್ರಾರಂಭಿಸಿ',
+                      hi: 'पीएचसी ⇄ जिला हस्तांतरण शुरू करें',
+                      ta: 'பிஎச்சி ⇄ மாவட்ட பரிமாற்றத்தை தொடங்கு',
+                      te: 'పీహెచ్‌సీ ⇄ జిల్లా బదిలీని ప్రారంభించండి',
+                      mr: 'पीएचसी ⇄ जिल्हा औषध हस्तांतरण सुरू करा',
+                    })}
+                  </h3>
+                  <p className="text-[10px] text-slate-400">
+                    National Health Mission &bull; Drug Inventory Redistribution
+                  </p>
+                </div>
               </div>
               <button
-                onClick={() => setActiveTab('audit')}
-                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                onClick={() => setIsNewTransferOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                <span>Audit Trail</span>
-                <ArrowRight className="w-3 h-3" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {recentActivities.length === 0 ? (
-              <p className="text-xs text-slate-400 py-4 text-center">No recent activity recorded.</p>
-            ) : (
-              <div className="space-y-2">
-                {recentActivities.map((act) => (
-                  <div
-                    key={act.id}
-                    className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs"
+            {/* Modal Body Form */}
+            <form onSubmit={handleCreateTransfer} className="p-6 space-y-4 overflow-y-auto flex-1">
+              
+              {/* Transfer Direction */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  {getLoc({ en: 'Transfer Direction', kn: 'ವರ್ಗಾವಣೆ ದಿಕ್ಕು', hi: 'हस्तांतरण दिशा', ta: 'பரிமாற்ற திசை', te: 'బదిలీ దిశ', mr: 'हस्तांतरण दिशा' })}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewDirection('PHC_TO_DISTRICT')}
+                    className={`py-2 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      newDirection === 'PHC_TO_DISTRICT'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                    }`}
                   >
-                    <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 font-bold mt-0.5">
-                      {act.type === 'ADMISSION' ? (
-                        <Bed className="w-3.5 h-3.5 text-purple-500" />
-                      ) : act.type === 'TRANSFER' ? (
-                        <Truck className="w-3.5 h-3.5 text-amber-500" />
-                      ) : act.type === 'COMPLETED' ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                      ) : (
-                        <Users className="w-3.5 h-3.5 text-blue-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h5 className="font-bold text-slate-900 dark:text-white truncate">{act.title}</h5>
-                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                          {new Date(act.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">{act.description}</p>
-                    </div>
-                  </div>
-                ))}
+                    <span>PHC ➔ District</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewDirection('DISTRICT_TO_PHC')}
+                    className={`py-2 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      newDirection === 'DISTRICT_TO_PHC'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    <span>District ➔ PHC</span>
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* ── 3. FACILITY MAP VIEW (GIS) ── */}
-      {activeTab === 'map' && (
-        <DistrictFacilityMapView
-          districtName={currentDistrict}
-          facilities={districtFacilities}
-          stocks={stocks}
-          referrals={referrals}
-          patients={patients}
-          onOpenReferralsTab={() => setActiveTab('track_referrals')}
-          onOpenCapacityTab={() => setActiveTab('capacity')}
-        />
-      )}
-
-      {/* ── 4. HOSPITAL CAPACITY & ICU MATRIX TAB ── */}
-      {activeTab === 'capacity' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">Hospital Capacity &amp; Resource Grid</h2>
-              <p className="text-xs text-slate-500">Live bed, ICU, ventilator and oxygen utilization across {currentDistrict} facilities</p>
-            </div>
-            <button
-              onClick={onOpenBedMatrix}
-              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer self-start sm:self-auto"
-            >
-              <Bed className="w-4 h-4" />
-              <span>Interactive Bed Matrix</span>
-            </button>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-black tracking-wider text-[10px]">
-                    <th className="p-3.5 pl-4">Facility</th>
-                    <th className="p-3.5">Type &amp; Taluka</th>
-                    <th className="p-3.5">General Beds</th>
-                    <th className="p-3.5">ICU Beds</th>
-                    <th className="p-3.5">Ventilators</th>
-                    <th className="p-3.5">Oxygen Beds</th>
-                    <th className="p-3.5 pr-4">Occupancy</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {districtFacilities.map((fac) => {
-                    const occPct = fac.totalBeds > 0 ? Math.round((fac.occupiedBeds / fac.totalBeds) * 100) : 0;
-                    return (
-                      <tr key={fac.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="p-3.5 pl-4 font-bold text-slate-900 dark:text-white">
-                          {fac.name}
-                        </td>
-                        <td className="p-3.5 text-slate-600 dark:text-slate-300">
-                          {fac.type} &bull; {fac.taluka || currentDistrict}
-                        </td>
-                        <td className="p-3.5">
-                          <strong className="text-slate-900 dark:text-white">{fac.totalBeds - fac.occupiedBeds} free</strong> / {fac.totalBeds}
-                        </td>
-                        <td className="p-3.5">
-                          <span className={fac.icuBedsTotal - fac.icuBedsOccupied === 0 ? 'text-rose-600 font-bold' : 'text-purple-600 dark:text-purple-400 font-bold'}>
-                            {fac.icuBedsTotal - fac.icuBedsOccupied} free
-                          </span> / {fac.icuBedsTotal}
-                        </td>
-                        <td className="p-3.5">
-                          {fac.ventilatorsTotal - fac.ventilatorsOccupied} free / {fac.ventilatorsTotal}
-                        </td>
-                        <td className="p-3.5">
-                          {fac.oxygenBedsTotal - fac.oxygenBedsOccupied} free / {fac.oxygenBedsTotal}
-                        </td>
-                        <td className="p-3.5 pr-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${
-                                  occPct >= 90 ? 'bg-rose-500' : occPct >= 70 ? 'bg-amber-500' : 'bg-blue-500'
-                                }`}
-                                style={{ width: `${occPct}%` }}
-                              />
-                            </div>
-                            <span className="font-bold text-slate-700 dark:text-slate-300">{occPct}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── 6. RESOURCE REALLOCATION TAB ── */}
-      {activeTab === 'reallocation' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">Resource Reallocation Engine</h2>
-              <p className="text-xs text-slate-500">Surplus-to-deficit matching for medicines and hospital beds calculated from live facility stock</p>
-            </div>
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-              {(['ALL', 'MEDICINE', 'ICU_BEDS'] as const).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setReallocationResourceFilter(type as any)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    reallocationResourceFilter === type
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900'
-                  }`}
+              {/* PHC Selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  {newDirection === 'PHC_TO_DISTRICT'
+                    ? getLoc({ en: 'Source Primary Health Centre (PHC)', kn: 'ಮೂಲ ಪ್ರಾಥಮಿಕ ಆರೋಗ್ಯ ಕೇಂದ್ರ (PHC)', hi: 'स्रोत प्राथमिक स्वास्थ्य केंद्र (PHC)', ta: 'மூல ஆரம்ப சுகாதார நிலையம்', te: 'మూల ప్రాథమిక ఆరోగ్య కేంద్రం', mr: 'मूळ प्राथमिक आरोग्य केंद्र' })
+                    : getLoc({ en: 'Target Primary Health Centre (PHC)', kn: 'ಗುರಿ ಪ್ರಾಥಮಿಕ ಆರೋಗ್ಯ ಕೇಂದ್ರ (PHC)', hi: 'गंतव्य प्राथमिक स्वास्थ्य केंद्र (PHC)', ta: 'இலக்கு ஆரம்ப சுகாதார நிலையம்', te: 'లక్ష్య ప్రాథమిక ఆరోగ్య కేంద్రం', mr: 'गंतव्य प्राथमिक आरोग्य केंद्र' })}
+                </label>
+                <select
+                  value={newSourcePhcId}
+                  onChange={(e) => setNewSourcePhcId(e.target.value)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 >
-                  {type.replace('_', ' ')}
-                </button>
-              ))}
-            </div>
-          </div>
+                  <option value="">{getLoc({ en: 'Select Health Centre...', kn: 'ಆರೋಗ್ಯ ಕೇಂದ್ರವನ್ನು ಆಯ್ಕೆಮಾಡಿ...', hi: 'स्वास्थ्य केंद्र चुनें...', ta: 'மையத்தை தேர்வுசெய்க...', te: 'కేంద్రాన్ని ఎంచుకోండి...', mr: 'आरोग्य केंद्र निवडा...' })}</option>
+                  {phcFacilities.map((phc) => (
+                    <option key={phc.id} value={phc.id}>
+                      {phc.name} ({phc.taluka || phc.district || 'PHC'})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {smartRecommendations
-              .filter(r => reallocationResourceFilter === 'ALL' || r.resourceType === reallocationResourceFilter)
-              .map((rec) => {
-                const isApproved = approvedReallocations.includes(rec.id);
-                return (
-                  <div
-                    key={rec.id}
-                    className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 shadow-xs"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300">
-                        {rec.resourceType.replace('_', ' ')}
-                      </span>
-                      <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                        {rec.urgency} Urgency
-                      </span>
-                    </div>
+              {/* Medicine Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  {getLoc({ en: 'Medicine Item', kn: 'ಔಷಧಿ ಹೆಸರು', hi: 'दवा का नाम', ta: 'மருந்தின் பெயர்', te: 'మందు పేరు', mr: 'औषधाचे नाव' })}
+                </label>
+                <select
+                  value={newMedicineName}
+                  onChange={(e) => setNewMedicineName(e.target.value)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Anti-Snake Venom (ASV Polyvalent Lyophilized)">Anti-Snake Venom (ASV Polyvalent Lyophilized)</option>
+                  <option value="Anti-Rabies Vaccine (ARV Purified Vero Cell)">Anti-Rabies Vaccine (ARV Purified Vero Cell)</option>
+                  <option value="Oxytocin Injection IP (10 IU/ml)">Oxytocin Injection IP (10 IU/ml)</option>
+                  <option value="Atropine Sulfate 0.6mg/ml">Atropine Sulfate 0.6mg/ml</option>
+                  <option value="Ceftriaxone Sodium 1g Vial">Ceftriaxone Sodium 1g Vial</option>
+                  <option value="Paracetamol 500mg IP (Blister pack)">Paracetamol 500mg IP (Blister pack)</option>
+                  <option value="Metformin 500mg Tab">Metformin 500mg Tab</option>
+                </select>
+              </div>
 
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                        Transfer {rec.recommendedQuantity} {rec.unit} of {rec.resourceName}
-                      </h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {rec.sourceFacilityName} &rarr; {rec.destinationFacilityName} ({rec.distanceKm} km)
-                      </p>
-                    </div>
-
-                    {isApproved ? (
-                      <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold text-center flex items-center justify-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Reallocation Dispatched &amp; Logged</span>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setActiveReallocationItem(rec)}
-                        className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <FileCheck className="w-3.5 h-3.5" />
-                        <span>Authorize Transfer</span>
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      )}
-
-      {/* ── 7. STATE ESCALATIONS TAB ── */}
-      {activeTab === 'escalations' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">State Health Authority Escalations</h2>
-              <p className="text-xs text-slate-500">Direct district-to-state escalation gateway for critical resource and tertiary patient coordination</p>
-            </div>
-            <button
-              onClick={() => setIsEscalationModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer self-start sm:self-auto"
-            >
-              <Radio className="w-3.5 h-3.5" />
-              <span>Create State Escalation</span>
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {stateEscalations.map((esc) => (
-              <div
-                key={esc.id}
-                className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300">
-                      {esc.issueCategory.replace(/_/g, ' ')}
-                    </span>
-                    <span className="text-[10px] font-black uppercase text-rose-600">
-                      {esc.urgency}
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">{esc.title}</h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300">{esc.summary}</p>
+              {/* Quantity & Urgency Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    {getLoc({ en: 'Quantity (Units)', kn: 'ಪ್ರಮಾಣ (ಯೂನಿಟ್‌ಗಳು)', hi: 'मात्रा (यूनिट)', ta: 'அளவு (அலகுகள்)', te: 'పరిమాణం (యూనిట్లు)', mr: 'प्रमाण (युनिट)' })}
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={newQuantity}
+                    onChange={(e) => setNewQuantity(Number(e.target.value))}
+                    className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
 
-                <div className="text-right shrink-0">
-                  <span className="text-xs font-bold px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                    {esc.status.replace(/_/g, ' ')}
-                  </span>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    {getLoc({ en: 'Urgency Level', kn: 'ತುರ್ತು ಮಟ್ಟ', hi: 'प्राथमिकता स्तर', ta: 'அவசர நிலை', te: 'ప్రాధాన్యత స్థాయి', mr: 'प्राधान्य पातळी' })}
+                  </label>
+                  <select
+                    value={newUrgency}
+                    onChange={(e) => setNewUrgency(e.target.value as any)}
+                    className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="ROUTINE">Routine</option>
+                    <option value="URGENT">Urgent</option>
+                    <option value="CRITICAL">Critical (Emergency)</option>
+                  </select>
                 </div>
               </div>
-            ))}
+
+              {/* Transport Mode */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  {getLoc({ en: 'Logistics Transport Mode', kn: 'ಸಾರಿಗೆ ವಿಧಾನ', hi: 'परिवहन साधन', ta: 'போக்குவரத்து முறை', te: 'రవాణా విధానం', mr: 'वाहतूक साधन' })}
+                </label>
+                <select
+                  value={newTransportMode}
+                  onChange={(e) => setNewTransportMode(e.target.value as any)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="DISTRICT_MEDICAL_COURIER">District Medical Courier (Cold-Chain Van)</option>
+                  <option value="108_AMBULANCE">108 Emergency Ambulance (Priority Dispatch)</option>
+                  <option value="FACILITY_TRANSPORT">PHC / Sub-Centre Facility Transport</option>
+                  <option value="POLICE_GREEN_CORRIDOR">Police Green Corridor (Ultra Critical)</option>
+                </select>
+              </div>
+
+              {/* Reason / Note */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  {getLoc({ en: 'Clinical Justification & Reason', kn: 'ಕಾರಣ ಮತ್ತು ವಿವರಣೆ', hi: 'कारण और विवरण', ta: 'காரணம் மற்றும் குறிப்பு', te: 'కారణం మరియు గమనిక', mr: 'औचित्य व कारण' })}
+                </label>
+                <textarea
+                  rows={2}
+                  value={newReason}
+                  onChange={(e) => setNewReason(e.target.value)}
+                  className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNewTransferOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer"
+                >
+                  {getLoc({ en: 'Cancel', kn: 'ರದ್ದುಮಾಡಿ', hi: 'रद्द करें', ta: 'ரத்துசெய்', te: 'రద్దు చేయండి', mr: 'रद्द करा' })}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md cursor-pointer"
+                >
+                  {getLoc({ en: 'Authorize & Submit Transfer', kn: 'ವರ್ಗಾವಣೆ ದೃಢೀಕರಿಸಿ', hi: 'हस्तांतरण अधिकृत करें', ta: 'அங்கீகரித்து சமர்ப்பி', te: 'ధృవీకరించి సమర్పించండి', mr: 'अधिकृत करून सादर करा' })}
+                </button>
+              </div>
+
+            </form>
+
           </div>
         </div>
       )}
 
-      {/* ── 8. TAMPER-EVIDENT AUDIT TAB ── */}
-      {activeTab === 'audit' && (
-        <TamperEvidentAuditView
-          blocks={tamperBlocks}
-          district={currentDistrict}
-        />
+      {/* ── 6. MODAL: DISPATCH CONSIGNMENT ── */}
+      {activeDispatchItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    {getLoc({ en: 'Dispatch Consignment', kn: 'ಸರಕು ರವಾನಿಸಿ', hi: 'कंसाइनमेंट डिस्पैच करें', ta: 'சரக்கு அனுப்பு', te: 'రవాణాను పంపండి', mr: 'कन्साइनमेंट रवाना करा' })}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {activeDispatchItem.medicineName} ({activeDispatchItem.requestedQuantity} Units)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveDispatchItem(null)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                {getLoc({ en: 'Consignment Tracking Code', kn: 'ಟ್ರ್ಯಾಕಿಂಗ್ ಕೋಡ್', hi: 'ट्रैकिंग कोड', ta: 'கண்காணிப்பு குறியீடு', te: 'ట్రాకింగ్ కోడ్', mr: 'ट्रॅकिंग कोड' })}
+              </label>
+              <input
+                type="text"
+                value={dispatchConsignmentCode}
+                onChange={(e) => setDispatchConsignmentCode(e.target.value)}
+                className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono font-bold text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                {getLoc({ en: 'Courier / Vehicle Mode', kn: 'ವಾಹನ ವಿಧಾನ', hi: 'वाहन साधन', ta: 'வாகன முறை', te: 'వాహన విధానం', mr: 'वाहन साधन' })}
+              </label>
+              <select
+                value={dispatchTransportMode}
+                onChange={(e) => setDispatchTransportMode(e.target.value as any)}
+                className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+              >
+                <option value="DISTRICT_MEDICAL_COURIER">District Medical Courier (Cold-Chain Van)</option>
+                <option value="108_AMBULANCE">108 Emergency Ambulance (Priority)</option>
+                <option value="FACILITY_TRANSPORT">PHC Facility Vehicle</option>
+                <option value="POLICE_GREEN_CORRIDOR">Police Green Corridor</option>
+              </select>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setActiveDispatchItem(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300"
+              >
+                {getLoc({ en: 'Cancel', kn: 'ರದ್ದುಮಾಡಿ', hi: 'रद्द करें', ta: 'ரத்து', te: 'రద్దు', mr: 'रद्द' })}
+              </button>
+              <button
+                onClick={handleConfirmDispatch}
+                disabled={isActionLoading}
+                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md cursor-pointer"
+              >
+                {getLoc({ en: 'Confirm Dispatch', kn: 'ರವಾನೆ ದೃಢೀಕರಿಸಿ', hi: 'डिस्पैच पुष्टि करें', ta: 'அனுப்புதலை உறுதிசெய்', te: 'డిస్పాచ్ నిర్ధారించండి', mr: 'रवाना निश्चित करा' })}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* ── 9. LIVE TRACKING SECTION (MEDICINE, REFERRALS, PATIENTS) ── */}
-      {(activeTab === 'track_medicine' || activeTab === 'track_referrals' || activeTab === 'track_patients') && (
-        <DistrictTrackingCenter
-          initialTab={
-            activeTab === 'track_medicine'
-              ? 'medicine'
-              : activeTab === 'track_referrals'
-              ? 'referrals'
-              : 'patients'
-          }
-          onOpenPatientTimeline={onOpenPatientTimeline}
-          onOpenReferralToken={onOpenReferralToken}
-          onReviewReferral={(ref) => handleOpenReferral(ref)}
-        />
+      {/* ── 7. MODAL: REJECT REASON ── */}
+      {activeRejectItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-rose-600 dark:text-rose-400">
+                {getLoc({ en: 'Reject Transfer Request', kn: 'ವರ್ಗಾವಣೆ ತಿರಸ್ಕರಿಸಿ', hi: 'हस्तांतरण अनुरोध अस्वीकार करें', ta: 'பரிமாற்றத்தை நிராகரி', te: 'బదిలీని తిరస్కరించండి', mr: 'हस्तांतरण नाकारा' })}
+              </h3>
+              <button
+                onClick={() => setActiveRejectItem(null)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                {getLoc({ en: 'Mandatory Reason for Rejection', kn: 'ತಿರಸ್ಕಾರಕ್ಕೆ ಕಡ್ಡಾಯ ಕಾರಣ', hi: 'अस्वीकृति का कारण', ta: 'நிராகரிப்புக்கான காரணம்', te: 'తిరస్కరణకు కారణం', mr: 'नाकारण्याचे कारण' })}
+              </label>
+              <textarea
+                rows={3}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder={getLoc({
+                  en: 'E.g., Insufficient source buffer stock, batch expiration check failed...',
+                  kn: 'ಉದಾಹರಣೆಗೆ, ಸಾಕಷ್ಟು ದಾಸ್ತಾನು ಇಲ್ಲ...',
+                  hi: 'उदा. स्रोत स्टॉक अपर्याप्त है...',
+                  ta: 'உதாரணமாக, போதிய இருப்பு இல்லை...',
+                  te: 'ఉదాహరణకు, తగినంత స్టాక్ లేదు...',
+                  mr: 'उदा. मूळ साठा अपुरा आहे...',
+                })}
+                className="w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setActiveRejectItem(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300"
+              >
+                {getLoc({ en: 'Cancel', kn: 'ರದ್ದು', hi: 'रद्द', ta: 'ரத்து', te: 'రద్దు', mr: 'रद्द' })}
+              </button>
+              <button
+                onClick={handleConfirmReject}
+                disabled={isActionLoading || !rejectReason.trim()}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md cursor-pointer disabled:opacity-50"
+              >
+                {getLoc({ en: 'Confirm Rejection', kn: 'ತಿರಸ್ಕಾರ ದೃಢೀಕರಿಸಿ', hi: 'अस्वीकृति की पुष्टि करें', ta: 'நிராகரிப்பை உறுதிசெய்', te: 'తిరస్కరణ నిర్ధారించండి', mr: 'नाकारणे निश्चित करा' })}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* ── 10. ACTION MODALS ── */}
-      {activeReviewReferral && (
-        <DistrictReferralReviewModal
-          referral={activeReviewReferral}
-          onClose={() => setActiveReviewReferral(null)}
-          updateReferralStatus={async (id, status, updates) => {
-            updateReferralStatus(id, status, updates);
-            await recordTamperAudit(
-              `UPDATE_REFERRAL_${status}`,
-              `Referral #${id} (${activeReviewReferral.patientName})`,
-              updates?.referralReason || `Status updated to ${status} by DHO`,
-              { status: activeReviewReferral.status },
-              { status, ...updates }
-            );
-            setActiveReviewReferral(null);
-          }}
-        />
-      )}
-
-      {activeReallocationItem && (
-        <SmartReallocationModal
-          recommendation={activeReallocationItem}
-          onClose={() => setActiveReallocationItem(null)}
-          onApprove={handleApproveReallocation}
-          onReject={handleRejectReallocation}
-        />
-      )}
-
-      {isEscalationModalOpen && (
-        <StateEscalationModal
-          district={currentDistrict}
-          actorName={user?.name || 'Dr. Vinod Chavan'}
-          actorId={user?.id || 'dho-9611'}
-          onClose={() => setIsEscalationModalOpen(false)}
-          onEscalate={async (escData) => {
-            const newEsc: StateEscalation = {
-              id: `esc-state-${Date.now()}`,
-              ...escData,
-              createdAt: new Date().toISOString(),
-              slaExpiresAt: new Date(Date.now() + escData.slaWindowMinutes * 60 * 1000).toISOString(),
-            };
-            setStateEscalations(prev => [newEsc, ...prev]);
-            await recordTamperAudit(
-              'CREATE_STATE_ESCALATION',
-              `Escalation #${newEsc.id}: ${newEsc.title}`,
-              `Escalated to State Authority: ${newEsc.summary}`,
-              undefined,
-              newEsc as unknown as Record<string, unknown>
-            );
-            setIsEscalationModalOpen(false);
-          }}
-        />
-      )}
     </div>
   );
 }

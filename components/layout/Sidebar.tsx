@@ -288,37 +288,30 @@ export function Sidebar({
       case 'district_officer':
         return [
           {
-            titleEn: 'District Command',
-            titleMr: 'जिल्हा नियंत्रण',
+            titleEn: 'Medicine Operations',
+            titleMr: 'औषध कार्यक्षेत्र',
             items: [
-              { id: 'overview', labelEn: 'District Command Center', labelMr: 'जिल्हा नियंत्रण कक्ष', icon: LayoutDashboard },
-              { id: 'map', labelEn: 'Facility & GIS Map', labelMr: 'आरोग्य सुविधा नकाशा (GIS)', icon: MapPin },
-              { id: 'capacity', labelEn: 'Hospital Capacity & Beds', labelMr: 'खाटा व ICU क्षमता', icon: Hospital },
-            ],
-          },
-          {
-            titleEn: 'Live Intelligence Tracking',
-            titleMr: 'थेट स्थिती ट्रॅकिंग',
-            items: [
-              { id: 'track_referrals', labelEn: 'Referral Risk Queue & Triage', labelMr: 'रुग्ण संदर्भ व ट्रायज ट्रॅकिंग', icon: Siren, badge: criticalReferralsCount > 0 ? criticalReferralsCount : undefined, badgeColor: 'bg-rose-600 text-white animate-pulse' },
-              { id: 'track_patients', labelEn: 'Track Patients & EHR', labelMr: 'रुग्ण प्रवास व EHR', icon: FolderHeart },
-              { id: 'track_medicine', labelEn: 'Track Medicine & Buffer', labelMr: 'औषध साठा ट्रॅकिंग', icon: Tablets },
-              { id: 'link:maha_aushadhi', labelEn: 'MahaAushadhi Emergency', labelMr: 'महा औषधी आपत्कालीन', icon: Syringe, isExternalLink: true, href: '/maha-aushadhi', badge: activeEmergencyTransfersCount > 0 ? activeEmergencyTransfersCount : undefined, badgeColor: 'bg-rose-600 text-white animate-pulse' },
-            ],
-          },
-          {
-            titleEn: 'Operations & Escalations',
-            titleMr: 'रुग्ण सेवा व रसद',
-            items: [
-              { id: 'reallocation', labelEn: 'Resource Reallocation', labelMr: 'संसाधन वाटप', icon: Sparkles },
-              { id: 'escalations', labelEn: 'State Escalation Gateway', labelMr: 'राज्य संदर्भ गेटवे', icon: Radio },
-            ],
-          },
-          {
-            titleEn: 'Governance & Security',
-            titleMr: 'प्रशासन व सुरक्षा',
-            items: [
-              { id: 'audit', labelEn: 'Audit Trail & Compliance', labelMr: 'सुरक्षा व ऑडिट ट्रेल', icon: ShieldCheck },
+              {
+                id: 'track_medicine',
+                labelEn: 'PHC Medicine Transfers',
+                labelMr: 'पीएचसी औषध हस्तांतरण',
+                icon: Tablets,
+                badge:
+                  (stockTransfers || []).filter(
+                    (t) =>
+                      t.status === 'PENDING' ||
+                      t.status === 'PENDING_SOURCE_APPROVAL' ||
+                      t.status === 'DISPATCHED'
+                  ).length > 0
+                    ? (stockTransfers || []).filter(
+                        (t) =>
+                          t.status === 'PENDING' ||
+                          t.status === 'PENDING_SOURCE_APPROVAL' ||
+                          t.status === 'DISPATCHED'
+                      ).length
+                    : undefined,
+                badgeColor: 'bg-blue-600 text-white animate-pulse',
+              },
             ],
           },
         ];

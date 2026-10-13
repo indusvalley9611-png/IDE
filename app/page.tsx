@@ -108,7 +108,7 @@ export default function Home() {
 
   // Active navigation view managed across left sidebar and main content
   const getDefaultNavItem = (r?: Role) => {
-    if (r === 'district_officer') return 'overview';
+    if (r === 'district_officer') return 'track_medicine';
     if (r === 'specialist') return 'incoming';
     if (r === 'phc_doctor') return 'directory';
     if (r === 'nurse') return 'directory';
