@@ -153,85 +153,81 @@ export function LandingPitchPage({
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
 
-        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative z-10">
+        <div className="max-w-4xl mx-auto flex flex-col items-center text-center space-y-6 relative z-10 py-4 sm:py-8">
+          <div className="flex items-center justify-center gap-2.5 flex-wrap">
+            <span className="px-3.5 py-1 rounded-full bg-orange-500/15 text-orange-300 border border-orange-400/30 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-orange-400" />
+              {isMr ? 'ABDM व DISHA सुसंगत' : 'ABDM & DISHA COMPLIANT'}
+            </span>
+            <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 text-xs font-bold flex items-center gap-1.5 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              {isMr ? 'ऑफलाईन-सक्षम रचना' : 'Offline-First Architecture'}
+            </span>
+          </div>
+
+          {/* Permanent Bilingual Brand Wordmark */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
+            Swasthya<span className="text-orange-400">Setu</span> <span className="text-slate-500 font-light mx-1">/</span> स्वास्थ्य<span className="text-emerald-400">सेतू</span>
+          </h1>
           
-          {/* Left Pitch Column */}
-          <div className="space-y-5 max-w-2xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-400/30 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-orange-400" />
-                {isMr ? 'ABDM व DISHA सुसंगत' : 'ABDM & DISHA COMPLIANT'}
-              </span>
-              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                {isMr ? 'ऑफलाईन-सक्षम रचना' : 'Offline-First Architecture'}
-              </span>
-            </div>
+          <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed max-w-2xl mx-auto">
+            {isMr ? (
+              <>
+                दुर्गम ग्रामीण व आदिवासी भागातील <strong className="text-white font-semibold">आशा कार्यकर्त्यांना</strong>{' '}
+                <strong className="text-white font-semibold">प्राथमिक आरोग्य केंद्रे</strong> आणि{' '}
+                <strong className="text-white font-semibold">जिल्हा रुग्णालयांशी</strong> जोडणारे बहुस्तरीय सार्वजनिक आरोग्य व संसाधन समन्वय व्यासपीठ.
+              </>
+            ) : (
+              <>
+                Multi-tier public health coordination &amp; resource intelligence platform connecting{' '}
+                <strong className="text-white font-semibold">ASHA Workers</strong> in remote rural hamlets with{' '}
+                <strong className="text-white font-semibold">PHCs</strong> and <strong className="text-white font-semibold">District Hospitals</strong> with zero data loss.
+              </>
+            )}
+          </p>
 
-            {/* Permanent Bilingual Brand Wordmark */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-              Swasthya<span className="text-orange-400">Setu</span> / स्वास्थ्य<span className="text-emerald-400">सेतू</span>
-            </h1>
-            
-            <p className="text-base sm:text-lg text-slate-300 font-medium leading-relaxed">
-              {isMr ? (
-                <>
-                  दुर्गम ग्रामीण व आदिवासी भागातील <strong className="text-white">आशा कार्यकर्त्यांना</strong>{' '}
-                  <strong className="text-white">प्राथमिक आरोग्य केंद्रे</strong> आणि{' '}
-                  <strong className="text-white">जिल्हा रुग्णालयांशी</strong> जोडणारे बहुस्तरीय सार्वजनिक आरोग्य व संसाधन समन्वय व्यासपीठ.
-                </>
-              ) : (
-                <>
-                  Multi-Tier Public Health Coordination &amp; Resource Intelligence Platform connecting{' '}
-                  <strong className="text-white">ASHA Workers</strong> in remote rural hamlets with{' '}
-                  <strong className="text-white">PHCs</strong> and <strong className="text-white">District Hospitals</strong> with zero data loss.
-                </>
-              )}
-            </p>
+          {/* Primary Action Button (Single Clean Gateway) */}
+          <div className="pt-2">
+            <button
+              onClick={onNavigateToSignIn}
+              className="px-9 py-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-black text-base transition-all shadow-xl shadow-orange-500/25 flex items-center gap-3 cursor-pointer scale-100 hover:scale-[1.03]"
+            >
+              <span>{isMr ? 'पोर्टलमध्ये प्रवेश करा' : 'Access Healthcare Portal'}</span>
+              <ArrowRight className="w-5 h-5 text-white" />
+            </button>
+          </div>
 
-            {/* Primary Action Button (Single Clean Gateway) */}
-            <div className="pt-2">
-              <button
-                onClick={onNavigateToSignIn}
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-black text-base transition-all shadow-xl shadow-orange-500/25 flex items-center gap-3 cursor-pointer scale-100 hover:scale-[1.02]"
-              >
-                <span>{isMr ? 'पोर्टलमध्ये प्रवेश करा' : 'Access Healthcare Portal'}</span>
-                <ArrowRight className="w-5 h-5 text-white" />
-              </button>
-            </div>
+          {/* Interactive Compliance Proof Badges */}
+          <div className="flex items-center justify-center gap-2.5 flex-wrap pt-4 border-t border-slate-800/80 w-full max-w-xl">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+              {isMr ? 'प्रमाणीकरण:' : 'Standards:'}
+            </span>
+            <button
+              onClick={() => setComplianceModal('ABDM')}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
+            >
+              <Lock className="w-3.5 h-3.5 text-blue-400" />
+              <span>{isMr ? 'ABDM टप्पे (M1-M3)' : 'ABDM Compliance (M1-M3)'}</span>
+              <HelpCircle className="w-3 h-3 text-slate-400" />
+            </button>
 
-            {/* Interactive Compliance Proof Badges */}
-            <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-slate-800/60">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
-                {isMr ? 'प्रमाणीकरण:' : 'Standards:'}
-              </span>
-              <button
-                onClick={() => setComplianceModal('ABDM')}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
-              >
-                <Lock className="w-3.5 h-3.5 text-blue-400" />
-                <span>{isMr ? 'ABDM टप्पे (M1-M3)' : 'ABDM Compliance (M1-M3)'}</span>
-                <HelpCircle className="w-3 h-3 text-slate-400" />
-              </button>
+            <button
+              onClick={() => setComplianceModal('DISHA')}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
+            >
+              <Shield className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{isMr ? 'DISHA डेटा गोपनीयता' : 'DISHA & IT Act Privacy'}</span>
+              <HelpCircle className="w-3 h-3 text-slate-400" />
+            </button>
 
-              <button
-                onClick={() => setComplianceModal('DISHA')}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
-              >
-                <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{isMr ? 'DISHA डेटा गोपनीयता' : 'DISHA & IT Act Privacy'}</span>
-                <HelpCircle className="w-3 h-3 text-slate-400" />
-              </button>
-
-              <button
-                onClick={() => setComplianceModal('OFFLINE')}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
-              >
-                <RefreshCw className="w-3.5 h-3.5 text-orange-400" />
-                <span>{isMr ? 'स्थानिक IndexedDB' : 'Encrypted IndexedDB'}</span>
-                <HelpCircle className="w-3 h-3 text-slate-400" />
-              </button>
-            </div>
+            <button
+              onClick={() => setComplianceModal('OFFLINE')}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-orange-400" />
+              <span>{isMr ? 'स्थानिक IndexedDB' : 'Encrypted IndexedDB'}</span>
+              <HelpCircle className="w-3 h-3 text-slate-400" />
+            </button>
           </div>
         </div>
       </section>
