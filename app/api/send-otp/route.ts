@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         const params = new URLSearchParams({
           To: fullPhoneNumber,
           From: cleanFromNumber,
-          Body: `[SwasthyaSetu - Government of Maharashtra] Your ABHA Health Registration OTP is ${generatedOtp}. Valid for 10 mins.`,
+          Body: `[SwasthyaSetu - Public Health Department] Your ABHA Health Registration OTP is ${generatedOtp}. Valid for 10 mins.`,
         });
 
         const twilioRes = await fetch(

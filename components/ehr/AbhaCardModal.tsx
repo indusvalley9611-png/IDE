@@ -79,7 +79,7 @@ export function AbhaCardModal({ patient, onClose }: AbhaCardModalProps) {
                     {language === 'mr' ? 'राष्ट्रीय आरोग्य प्राधिकरण' : 'AYUSHMAN BHARAT DIGITAL MISSION (ABDM)'}
                   </div>
                   <div className="text-[9px] text-slate-500">
-                    {language === 'mr' ? 'भारत सरकार व महाराष्ट्र शासन' : 'Govt of India & Govt of Maharashtra'}
+                    {language === 'mr' ? 'भारत सरकार · आरोग्य विभाग' : 'Govt of India · Health Department'}
                   </div>
                 </div>
                 <div className="text-right">

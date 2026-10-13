@@ -36,8 +36,8 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>('Male');
   const [phone, setPhone] = useState('');
   const [aadhaarLast4, setAadhaarLast4] = useState('');
-  const [village, setVillage] = useState('Velhe');
-  const [district, setDistrict] = useState('Pune');
+  const [village, setVillage] = useState('Indiranagar');
+  const [district, setDistrict] = useState('Bengaluru Urban');
   const [step, setStep] = useState<'FORM' | 'GENERATED'>('FORM');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -75,9 +75,9 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
       age: parseInt(age) || 28,
       gender,
       phone: phone.trim(),
-      village: village.trim() || 'Velhe',
-      taluka: 'Velhe',
-      district: district.trim() || 'Pune',
+      village: village.trim() || 'Indiranagar',
+      taluka: 'Bengaluru East',
+      district: district.trim() || 'Bengaluru Urban',
       bloodGroup: 'O+',
       isPregnant: false,
       isHighRiskPregnancy: false,
@@ -86,8 +86,8 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
         relation: 'Self',
         phone: phone.trim(),
       },
-      registrationFacilityId: 'fac-phc-velhe',
-      registrationFacilityName: 'Velhe Primary Health Centre (PHC)',
+      registrationFacilityId: 'fac-phc-indiranagar',
+      registrationFacilityName: 'Indiranagar General Hospital & PHC',
       registrationLevel: 'field',
       registeredByUserId: 'rural-citizen-self',
       registeredByUserName: 'Rural Citizen Self-Registration',

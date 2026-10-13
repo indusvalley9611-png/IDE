@@ -552,7 +552,7 @@ export function PatientTimelineModal({
                     Detailed Longitudinal View
                   </h3>
                   <p className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs mt-1 max-w-md">
-                    All historical parameters are synchronized directly with Maharashtra ABDM Health Information
+                    All historical parameters are synchronized directly with ABDM Health Information
                     Exchange.
                   </p>
                 </div>
@@ -577,7 +577,7 @@ export function PatientTimelineModal({
                       Medical Record Restricted
                     </h3>
                     <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                      Under ABDM and Maharashtra Patient Data Privacy Regulations, clinical records are protected under least-privilege access rules.
+                      Under ABDM and National Patient Data Privacy Regulations, clinical records are protected under least-privilege access rules.
                     </p>
                   </div>
                 </div>
@@ -704,7 +704,7 @@ export function PatientTimelineModal({
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Emergency Break-Glass Access</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  ABDM Maharashtra Clinical Override Protocol
+                  ABDM Clinical Override Protocol
                 </p>
               </div>
             </div>

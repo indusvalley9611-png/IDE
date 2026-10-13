@@ -82,11 +82,11 @@ export function FinalPatientReportModal({
 
     const reportContent = `
 ================================================================================
-GOVERNMENT OF MAHARASHTRA • PUBLIC HEALTH DEPARTMENT
+NATIONAL HEALTH MISSION • PUBLIC HEALTH DEPARTMENT
 DIRECTORATE OF HEALTH SERVICES • SWASTHYASETU INTEGRATED EHR
 ================================================================================
 FINAL CLINICAL DISCHARGE & CARE JOURNEY SUMMARY
-Document ID: MH-EHR-${patient.id.toUpperCase()}-${Date.now().toString().slice(-4)}
+Document ID: EHR-${patient.id.toUpperCase()}-${Date.now().toString().slice(-4)}
 Generated On: ${reportDate}
 
 1. PATIENT DEMOGRAPHICS & IDENTIFICATION
@@ -161,7 +161,7 @@ Warning Signs    : Return immediately if shortness of breath, acute chest pain, 
 ================================================================================
 OFFICIAL HEALTHCARE SIGNATURE & VERIFICATION STAMP
 Digitally signed via SwasthyaSetu NDHM/ABDM Gateway
-Public Health Department, Government of Maharashtra
+Public Health Department, National Health Mission
 ================================================================================
     `;
 
@@ -236,7 +236,7 @@ Public Health Department, Government of Maharashtra
                 </div>
                 <div>
                   <h1 className="text-sm font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
-                    Government of Maharashtra &bull; Public Health Department
+                    National Health Mission &bull; Public Health Department
                   </h1>
                   <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
                     Directorate of Health Services &bull; District Civil Surgeon Office
@@ -309,8 +309,8 @@ Public Health Department, Government of Maharashtra
                 <span className="font-medium">{patient.village || 'Velhe'}, {patient.taluka || 'Velhe'}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[11px]">District / State</span>
-                <span className="font-medium">{patient.district || 'Pune'}, Maharashtra</span>
+                <span className="text-slate-400 block text-[11px]">District</span>
+                <span className="font-medium">{patient.district || 'Bengaluru'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Emergency Contact</span>
@@ -581,7 +581,7 @@ Public Health Department, Government of Maharashtra
               </div>
               <div className="space-y-0.5 text-xs text-slate-500 dark:text-slate-400">
                 <span className="font-bold text-slate-800 dark:text-slate-200 block">Digitally Authenticated</span>
-                <span className="text-[10px] block">Government of Maharashtra Public Health Portal</span>
+                <span className="text-[10px] block">National Health Mission Public Health Portal</span>
                 <span className="text-[10px] font-mono text-slate-400 block">SHA-256: 4f8b2a...9d7e (Tamper Sealed)</span>
               </div>
             </div>
@@ -589,7 +589,7 @@ Public Health Department, Government of Maharashtra
             <div className="text-center sm:text-right space-y-1 text-xs">
               <div className="font-black text-slate-900 dark:text-white">Dr. Vinod Chavan, MD</div>
               <div className="text-slate-500 dark:text-slate-400 text-[11px]">District Health Officer / Civil Surgeon</div>
-              <div className="text-[10px] font-mono text-slate-400">Public Health Department, Maharashtra</div>
+              <div className="text-[10px] font-mono text-slate-400">Public Health Department</div>
             </div>
           </div>
         </div>

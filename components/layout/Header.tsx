@@ -303,7 +303,7 @@ export function Header({
                       {user?.village ? `${user.village}, ` : ''}
                       {user?.taluka ? `${user.taluka} Taluka, ` : ''}
                       {user?.district ? `${user.district} District, ` : ''}
-                      {user?.state || 'Maharashtra'}
+                      {user?.state || 'National Health Mission'}
                     </span>
                   </div>
                   <div className="text-[10px] text-slate-400 font-mono pt-1">
@@ -365,7 +365,7 @@ export function Header({
                 <MapPin className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>
                   {user.district ? `${user.district} District, ` : ''}
-                  {user.state || 'Maharashtra'}
+                  {user.state || 'National Health Mission'}
                 </span>
               </span>
             </div>

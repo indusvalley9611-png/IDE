@@ -255,7 +255,7 @@ export function TopHeader({
                           District Jurisdiction
                         </span>
                         <span className="font-medium truncate block text-slate-800 dark:text-slate-200">
-                          {user.district ? `${user.district} District, Maharashtra` : 'Maharashtra State Public Health'}
+                          {user.district ? `${user.district} District` : 'Public Health Directorate'}
                         </span>
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { StateEscalation } from '@/lib/types';
@@ -43,7 +43,7 @@ export function StateEscalationModal({
     'Step-down HDU conversion initiated',
   ].join('\n'));
   const [reason, setReason] = useState(
-    'Mandatory district-level escalation under Maharashtra Epidemic & Critical Resource Protocol.'
+    'Mandatory district-level escalation under National Epidemic & Critical Resource Protocol.'
   );
   const [slaWindow, setSlaWindow] = useState(60); // 60 minutes SLA
   const [error, setError] = useState('');
@@ -96,7 +96,7 @@ export function StateEscalationModal({
               Escalate Unresolved Critical Bottleneck
             </h2>
             <p className="text-xs text-slate-300 mt-0.5">
-              Directorate of Health Services (DHS Maharashtra) Apex Command Channel
+              Directorate of Health Services (DHS) Apex Command Channel
             </p>
           </div>
           <button

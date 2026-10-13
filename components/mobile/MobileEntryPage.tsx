@@ -106,7 +106,7 @@ export function MobileEntryPage({
               Swasthya<span className="text-emerald-600 dark:text-emerald-400">Setu</span>
             </span>
             <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-wider uppercase block mt-0.5">
-              {isMr ? 'महाराष्ट्र सार्वजनिक आरोग्य' : 'Maharashtra Public Health'}
+              {isMr ? 'सार्वजनिक आरोग्य व्यासपीठ' : 'Integrated Public Health'}
             </span>
           </div>
         </div>
@@ -261,7 +261,7 @@ export function MobileEntryPage({
       <footer className="px-4 py-3 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-900 text-center transition-colors">
         <div className="flex items-center justify-center gap-2 text-[10px] font-semibold text-slate-500 dark:text-slate-500">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
-          <span>Public Health Department &bull; Govt of Maharashtra</span>
+          <span>Public Health Department &bull; National Health Mission</span>
         </div>
       </footer>
 

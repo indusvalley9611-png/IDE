@@ -138,14 +138,14 @@ export function MaharashtraNetworkMap({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-black text-white tracking-tight">
-                Maharashtra Healthcare GIS Network Map
+                Healthcare GIS Network Map
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-teal-500/20 text-teal-300 border border-teal-500/30">
                 Live Shortest Route Engine
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Inter-facility road distances, emergency ambulance transit times, and ICU capacity across all 36 Maharashtra districts.
+              Inter-facility road distances, emergency ambulance transit times, and ICU capacity across all health districts.
             </p>
           </div>
         </div>

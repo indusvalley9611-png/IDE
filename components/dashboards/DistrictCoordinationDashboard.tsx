@@ -455,7 +455,7 @@ export function DistrictCoordinationDashboard({
               <span>{currentDistrict} District Health Operations</span>
             </h1>
             <p className="text-xs text-slate-400">
-              {user?.name || 'Dr. Vinod Chavan'} &bull; {user?.roleTitleEn || 'District Health Officer / Civil Surgeon'} &bull; Maharashtra Health Dept
+              {user?.name || 'Dr. Vinod Chavan'} &bull; {user?.roleTitleEn || 'District Health Officer / Civil Surgeon'} &bull; Public Health Dept
             </p>
           </div>
         </div>

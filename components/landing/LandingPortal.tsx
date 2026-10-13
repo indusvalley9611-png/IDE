@@ -167,15 +167,15 @@ export function LandingPortal({
       {/* ── 1. GOVERNMENT OF MAHARASHTRA TOP IDENTITY BAR ── */}
       <header className="bg-slate-900 border-b border-slate-800 text-white px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center font-black text-white text-xs shrink-0 shadow-xs border border-orange-400/40">
-            MH
+          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-black text-white text-xs shrink-0 shadow-xs border border-emerald-400/40">
+            NHM
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-black tracking-wide text-white uppercase">
                 {isMr
-                  ? 'सार्वजनिक आरोग्य विभाग, महाराष्ट्र शासन'
-                  : 'Public Health Department, Government of Maharashtra'}
+                  ? 'सार्वजनिक आरोग्य विभाग, राष्ट्रीय आरोग्य अभियान'
+                  : 'Public Health Department, National Health Mission'}
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-medium">
@@ -664,8 +664,8 @@ export function LandingPortal({
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>
               {isMr
-                ? 'तुमचा आरोग्य डेटा सुरक्षित आहे · महाराष्ट्र शासनाच्या सुरक्षित डेटा केंद्रात कूटबद्ध.'
-                : 'Your health data is securely encrypted within Maharashtra State infrastructure.'}
+                ? 'तुमचा आरोग्य डेटा सुरक्षित आहे · सुरक्षित सार्वजनिक आरोग्य डेटा केंद्रात कूटबद्ध.'
+                : 'Your health data is securely encrypted within secure National Health infrastructure.'}
             </span>
           </p>
           <p className="text-[11px] text-slate-400 max-w-2xl mx-auto">
@@ -855,8 +855,8 @@ export function LandingPortal({
                       {isMr ? 'राज्य डेटा सार्वभौमत्व:' : 'State Data Sovereignty:'}
                     </strong>{' '}
                     {isMr
-                      ? 'सर्व क्लिनिकल नोंदी आणि एनक्रिप्टेड ऑडिट ट्रेल महाराष्ट्र राज्य डेटा केंद्रात सुरक्षित राहतात.'
-                      : 'All clinical records and encrypted audit logs reside within the Maharashtra State Data Center infrastructure.'}
+                      ? 'सर्व क्लिनिकल नोंदी आणि एनक्रिप्टेड ऑडिट ट्रेल राष्ट्रीय आरोग्य डेटा केंद्रात सुरक्षित राहतात.'
+                      : 'All clinical records and encrypted audit logs reside within the National Health Data Center infrastructure.'}
                   </p>
                   <p>
                     <strong className="text-slate-900 dark:text-white">

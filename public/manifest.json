@@ -1,7 +1,7 @@
 {
-  "name": "SwasthyaSetu — Maharashtra Public Health",
+  "name": "SwasthyaSetu — Public Health Platform",
   "short_name": "SwasthyaSetu",
-  "description": "Maharashtra Integrated Public Healthcare & Emergency System",
+  "description": "Integrated Public Healthcare & Emergency System",
   "start_url": "/?mode=mobile",
   "id": "/?mode=mobile",
   "scope": "/",

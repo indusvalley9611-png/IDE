@@ -18,8 +18,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'SwasthyaSetu — Maharashtra Integrated Public Healthcare & Referral Management System',
-  description: 'Public Health Department, Government of Maharashtra. ABDM & FHIR R4 Compliant Healthcare & Smart Triage Referral Platform.',
+  title: 'SwasthyaSetu — Integrated Public Healthcare & Referral Management System',
+  description: 'Public Health Department, National Health Mission. ABDM & FHIR R4 Compliant Healthcare & Smart Triage Referral Platform.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

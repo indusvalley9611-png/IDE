@@ -384,7 +384,7 @@ export function Sidebar({
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div
               className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/25 shrink-0 animate-heartbeat motion-safe:animate-heartbeat"
-              title="SwasthyaSetu — Government of Maharashtra"
+              title="SwasthyaSetu — Public Health Platform"
             >
               <MedicalHeartbeatIcon className="w-5 h-5 text-white" />
             </div>
@@ -395,11 +395,11 @@ export function Sidebar({
                     Swasthya<span className="text-blue-500">Setu</span>
                   </span>
                   <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    MH
+                    NHM
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                  Govt. of Maharashtra
+                  National Health Mission
                 </p>
               </div>
             )}

@@ -97,7 +97,7 @@ export function PatientDownloadModal({ onClose }: PatientDownloadModalProps) {
       color: rgb(0.08, 0.2, 0.4),
     });
 
-    page.drawText('GOVERNMENT OF MAHARASHTRA · PUBLIC HEALTH DEPARTMENT', {
+    page.drawText('NATIONAL HEALTH MISSION · PUBLIC HEALTH DEPARTMENT', {
       x: margin + 12,
       y: y - 16,
       size: 11,

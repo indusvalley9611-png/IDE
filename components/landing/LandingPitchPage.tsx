@@ -164,8 +164,8 @@ export function LandingPitchPage({
             <div className="flex items-center gap-2">
               <span className="text-xs font-black tracking-wide text-white uppercase">
                 {isMr
-                  ? 'सार्वजनिक आरोग्य विभाग, महाराष्ट्र शासन'
-                  : 'Public Health Department, Government of Maharashtra'}
+                  ? 'सार्वजनिक आरोग्य विभाग, राष्ट्रीय आरोग्य अभियान'
+                  : 'Public Health Department, National Health Mission'}
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-medium">
@@ -642,8 +642,8 @@ export function LandingPitchPage({
                       {isMr ? 'राज्य डेटा सार्वभौमत्व:' : 'State Data Sovereignty:'}
                     </strong>{' '}
                     {isMr
-                      ? 'सर्व क्लिनिकल नोंदी आणि एनक्रिप्टेड ऑडिट ट्रेल महाराष्ट्र राज्य डेटा केंद्रात सुरक्षित राहतात.'
-                      : 'All clinical records and encrypted audit logs reside within the Maharashtra State Data Center infrastructure.'}
+                      ? 'सर्व क्लिनिकल नोंदी आणि एनक्रिप्टेड ऑडिट ट्रेल राष्ट्रीय आरोग्य डेटा केंद्रात सुरक्षित राहतात.'
+                      : 'All clinical records and encrypted audit logs reside within the National Health Data Center infrastructure.'}
                   </p>
                   <p>
                     <strong className="text-slate-900 dark:text-white">

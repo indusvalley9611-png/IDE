@@ -306,7 +306,7 @@ export const GUEST_PROFILE: UserProfile = {
   roleTitleMr: 'अनोळखी सत्र',
   phone: '',
   facilityId: '',
-  facilityName: 'Public Health Department, Maharashtra',
+  facilityName: 'Public Health Department',
   facilityType: 'PHC',
   hfrCode: 'HFR-UNASSIGNED',
   taluka: '',

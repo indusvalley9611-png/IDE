@@ -80,7 +80,7 @@ export function AuditTrailModal({ onClose }: AuditTrailModalProps) {
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                Immutable electronic audit record of all patient data access events under Maharashtra Health Gateway
+                Immutable electronic audit record of all patient data access events under National Health Gateway
               </p>
             </div>
           </div>
