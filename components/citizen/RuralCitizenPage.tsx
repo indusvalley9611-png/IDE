@@ -19,9 +19,11 @@ import {
   Wifi,
   WifiOff,
   Database,
+  FileText,
 } from 'lucide-react';
 import { CitizenAbhaRegistrationModal } from '@/components/citizen/CitizenAbhaRegistrationModal';
 import { NearbyPhcMapModal } from '@/components/citizen/NearbyPhcMapModal';
+import { PatientDownloadModal } from '@/components/auth/PatientDownloadModal';
 
 interface RuralCitizenPageProps {
   onBack: () => void;
@@ -41,7 +43,7 @@ interface LocalizedText {
 interface FeatureItem {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: 'emerald' | 'blue' | 'violet' | 'teal';
+  color: 'emerald' | 'blue' | 'indigo' | 'violet' | 'teal';
   title: LocalizedText;
   desc: LocalizedText;
   action: LocalizedText;
@@ -103,7 +105,35 @@ const FEATURES: FeatureItem[] = [
       hi: 'केंद्र खोजें',
       ta: 'மையங்களைத் தேடு',
       te: 'కేంద్రాలను కనుగొనండి',
-      mr: 'केंद्र शोधा',
+    },
+  },
+  {
+    id: 'ehr_download',
+    icon: FileText,
+    color: 'indigo',
+    title: {
+      en: 'Citizen Patient Health Portal (ABHA OTP)',
+      kn: 'ನಾಗರಿಕ ರೋಗಿಯ ಆರೋಗ್ಯ ಪೋರ್ಟಲ್ (ಆಭಾ OTP)',
+      hi: 'नागरिक मरीज स्वास्थ्य पोर्टल (आभा OTP)',
+      ta: 'குடிமக்கள் நோயாளி சுகாதார தளம் (ஆபா OTP)',
+      te: 'పౌరుల రోగి ఆరోగ్య పోర్టల్ (ఆభా OTP)',
+      mr: 'नागरिक रुग्ण आरोग्य पोर्टल (आभा OTP)',
+    },
+    desc: {
+      en: 'Download personal EHR records and referral tokens.',
+      kn: 'ವೈಯಕ್ತಿಕ EHR ದಾಖಲೆಗಳು ಮತ್ತು ರೆಫರಲ್ ಟೋಕನ್‌ಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.',
+      hi: 'व्यक्तिगत ईएचआर रिकॉर्ड और रेफरल टोकन डाउनलोड करें।',
+      ta: 'தனிப்பட்ட EHR பதிவுகள் மற்றும் பரிந்துரை டோக்கன்களை பதிவிறக்கவும்.',
+      te: 'వ్యక్తిగత EHR రికార్డులు మరియు రిఫరల్ టోకెన్‌లను డౌన్‌లోడ్ చేసుకోండి.',
+      mr: 'वैयक्तिक आरोग्य नोंदी व संदर्भ टोकन डाउनलोड करा.',
+    },
+    action: {
+      en: 'Download Records (ABHA OTP)',
+      kn: 'ದಾಖಲೆಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ (ABHA OTP)',
+      hi: 'रिकॉर्ड डाउनलोड करें (ABHA OTP)',
+      ta: 'பதிவுகளை பதிவிறக்கவும் (ABHA OTP)',
+      te: 'రికార్డులను డౌన్‌లోడ్ చేయండి (ABHA OTP)',
+      mr: 'नोंदी डाउनलोड करा (ABHA OTP)',
     },
   },
   {
@@ -183,6 +213,14 @@ const COLOR_MAP: Record<string, { bg: string; icon: string; badge: string; btn: 
     border: 'border-blue-200 dark:border-blue-900 hover:border-blue-500',
     ring: 'ring-blue-500/20',
   },
+  indigo: {
+    bg: 'bg-indigo-50 dark:bg-indigo-950/20',
+    icon: 'bg-indigo-600',
+    badge: 'bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300',
+    btn: 'bg-indigo-600 hover:bg-indigo-700',
+    border: 'border-indigo-200 dark:border-indigo-900 hover:border-indigo-500',
+    ring: 'ring-indigo-500/20',
+  },
   violet: {
     bg: 'bg-violet-50 dark:bg-violet-950/20',
     icon: 'bg-violet-600',
@@ -215,6 +253,7 @@ export function RuralCitizenPage({
   const [activeFeature, setActiveFeature] = useState<string | null>(null);
   const [isAbhaModalOpen, setIsAbhaModalOpen] = useState(false);
   const [isPhcMapModalOpen, setIsPhcMapModalOpen] = useState(false);
+  const [isEhrModalOpen, setIsEhrModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -401,6 +440,8 @@ export function RuralCitizenPage({
                       setIsAbhaModalOpen(true);
                     } else if (feature.id === 'phc') {
                       setIsPhcMapModalOpen(true);
+                    } else if (feature.id === 'ehr_download') {
+                      setIsEhrModalOpen(true);
                     } else {
                       setActiveFeature(activeFeature === feature.id ? null : feature.id);
                     }
@@ -444,6 +485,8 @@ export function RuralCitizenPage({
                             setIsAbhaModalOpen(true);
                           } else if (feature.id === 'phc') {
                             setIsPhcMapModalOpen(true);
+                          } else if (feature.id === 'ehr_download') {
+                            setIsEhrModalOpen(true);
                           } else {
                             showToast(getText(comingSoonText, language));
                           }
@@ -452,7 +495,7 @@ export function RuralCitizenPage({
                       >
                         {getText(feature.action, language)}
                       </button>
-                      {feature.id !== 'registration' && feature.id !== 'phc' && (
+                      {feature.id !== 'registration' && feature.id !== 'phc' && feature.id !== 'ehr_download' && (
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                           {getText(comingSoonText, language)}
                         </span>
@@ -483,6 +526,11 @@ export function RuralCitizenPage({
       {/* ── REAL-TIME PHC MAP MODAL ── */}
       {isPhcMapModalOpen && (
         <NearbyPhcMapModal onClose={() => setIsPhcMapModalOpen(false)} />
+      )}
+
+      {/* ── CITIZEN PATIENT HEALTH PORTAL (ABHA OTP) MODAL ── */}
+      {isEhrModalOpen && (
+        <PatientDownloadModal onClose={() => setIsEhrModalOpen(false)} />
       )}
 
       {/* ── TOAST ── */}
