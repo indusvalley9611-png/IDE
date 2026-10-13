@@ -1,12 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth, PRE_REGISTERED_STAFF } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSync } from '@/context/SyncContext';
 import {
-  Users,
-  Stethoscope,
   HeartPulse,
   Languages,
   Moon,
@@ -20,7 +17,6 @@ import {
   X,
   Lock,
   HelpCircle,
-  LogIn,
 } from 'lucide-react';
 
 interface LandingPitchPageProps {
@@ -34,7 +30,6 @@ export function LandingPitchPage({
   isDarkMode,
   onToggleDarkMode,
 }: LandingPitchPageProps) {
-  const { sendOtp, verifyOtp } = useAuth();
   const { language, toggleLanguage } = useLanguage();
   const {
     effectiveOnline,
@@ -47,13 +42,6 @@ export function LandingPitchPage({
 
   // Compliance Explainer Modal State
   const [complianceModal, setComplianceModal] = useState<'ABDM' | 'DISHA' | 'OFFLINE' | null>(null);
-
-  // Handle Quick Demo Auto-Login for Judges
-  const handleLaunchAshaDemo = async () => {
-    const ashaPhone = PRE_REGISTERED_STAFF['user-asha-01']?.phone || '9822019284';
-    await sendOtp(ashaPhone);
-    await verifyOtp(ashaPhone, '123456');
-  };
 
   const isMr = language === 'mr';
 
@@ -201,33 +189,25 @@ export function LandingPitchPage({
               )}
             </p>
 
-            {/* Primary Action Buttons */}
-            <div className="flex items-center gap-3.5 flex-wrap pt-2">
+            {/* Primary Action Button (Single Clean Gateway) */}
+            <div className="pt-2">
               <button
                 onClick={onNavigateToSignIn}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-sm transition-all shadow-lg shadow-orange-500/25 flex items-center gap-2 cursor-pointer scale-100 hover:scale-[1.02]"
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-black text-base transition-all shadow-xl shadow-orange-500/25 flex items-center gap-3 cursor-pointer scale-100 hover:scale-[1.02]"
               >
-                <span>{isMr ? 'पोर्टलमध्ये प्रवेश करा' : 'Enter Portal & Sign In'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={handleLaunchAshaDemo}
-                className="px-5 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 font-bold text-sm transition-all shadow-xs flex items-center gap-2 cursor-pointer hover:border-slate-600"
-              >
-                <Users className="w-4 h-4 text-orange-400" />
-                <span>{isMr ? 'आशा सेविका १-क्लिक चाचणी' : 'Quick ASHA Demo Login'}</span>
+                <span>{isMr ? 'पोर्टलमध्ये प्रवेश करा' : 'Access Healthcare Portal'}</span>
+                <ArrowRight className="w-5 h-5 text-white" />
               </button>
             </div>
 
             {/* Interactive Compliance Proof Badges */}
-            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-800/60">
+            <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-slate-800/60">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
                 {isMr ? 'प्रमाणीकरण:' : 'Standards:'}
               </span>
               <button
                 onClick={() => setComplianceModal('ABDM')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
               >
                 <Lock className="w-3.5 h-3.5 text-blue-400" />
                 <span>{isMr ? 'ABDM टप्पे (M1-M3)' : 'ABDM Compliance (M1-M3)'}</span>
@@ -236,7 +216,7 @@ export function LandingPitchPage({
 
               <button
                 onClick={() => setComplianceModal('DISHA')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
               >
                 <Shield className="w-3.5 h-3.5 text-emerald-400" />
                 <span>{isMr ? 'DISHA डेटा गोपनीयता' : 'DISHA & IT Act Privacy'}</span>
@@ -245,10 +225,10 @@ export function LandingPitchPage({
 
               <button
                 onClick={() => setComplianceModal('OFFLINE')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-slate-500"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-orange-400" />
-                <span>{isMr ? 'IndexedDB साठवणूक' : 'Encrypted IndexedDB'}</span>
+                <span>{isMr ? 'स्थानिक IndexedDB' : 'Encrypted IndexedDB'}</span>
                 <HelpCircle className="w-3 h-3 text-slate-400" />
               </button>
             </div>
