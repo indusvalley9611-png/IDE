@@ -23,6 +23,11 @@ import {
   Activity,
   ArrowRight,
   Info,
+  GripHorizontal,
+  Minus,
+  Maximize2,
+  Minimize2,
+  Move,
 } from 'lucide-react';
 
 interface VoiceAiChatModalProps {
@@ -79,6 +84,94 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
 
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // ── Floating Draggable Window State ──
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(null);
+
+  // Initialize position to bottom-right or saved position on client mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const saved = localStorage.getItem('swasthyasetu_ai_pos');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          const w = window.innerWidth;
+          const h = window.innerHeight;
+          const modalW = isMaximized ? 680 : Math.min(480, w - 20);
+          const modalH = isMaximized ? 800 : Math.min(640, h - 20);
+          const clampedX = Math.max(10, Math.min(w - modalW - 10, parsed.x));
+          const clampedY = Math.max(10, Math.min(h - modalH - 10, parsed.y));
+          setPosition({ x: clampedX, y: clampedY });
+          return;
+        }
+      } catch (_) {}
+    }
+
+    const isSmall = window.innerWidth < 640;
+    const defaultWidth = isSmall ? Math.min(window.innerWidth - 20, 390) : 460;
+    const defaultHeight = isSmall ? 580 : 620;
+    const defaultX = Math.max(10, window.innerWidth - defaultWidth - (isSmall ? 10 : 25));
+    const defaultY = Math.max(10, window.innerHeight - defaultHeight - (isSmall ? 10 : 25));
+
+    setPosition({ x: defaultX, y: defaultY });
+  }, [isMaximized]);
+
+  // Handle Dragging via Pointer Events (smooth mouse + mobile touch)
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('select') || target.closest('input')) {
+      return;
+    }
+
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+
+    setIsDragging(true);
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: position?.x ?? 20,
+      posY: position?.y ?? 20,
+    };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || !dragStartRef.current) return;
+
+    const dx = e.clientX - dragStartRef.current.startX;
+    const dy = e.clientY - dragStartRef.current.startY;
+
+    const modalWidth = modalRef.current?.offsetWidth || 460;
+    const modalHeight = modalRef.current?.offsetHeight || 620;
+
+    const maxX = Math.max(10, window.innerWidth - modalWidth - 10);
+    const maxY = Math.max(10, window.innerHeight - modalHeight - 10);
+
+    const nextX = Math.max(10, Math.min(maxX, dragStartRef.current.posX + dx));
+    const nextY = Math.max(10, Math.min(maxY, dragStartRef.current.posY + dy));
+
+    setPosition({ x: nextX, y: nextY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch (_) {}
+
+    setIsDragging(false);
+    dragStartRef.current = null;
+
+    if (position) {
+      localStorage.setItem('swasthyasetu_ai_pos', JSON.stringify(position));
+    }
+  };
 
   // Dynamic Initial Welcome Message according to selected language
   const getWelcomeText = (lang: Language): string => {
@@ -777,69 +870,107 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-[90vh] max-h-[750px] overflow-hidden">
-        
-        {/* ── HEADER WITH DYNAMIC LANGUAGE SWITCHER ── */}
-        <div className="px-5 py-3.5 bg-gradient-to-r from-emerald-700 via-teal-700 to-slate-900 text-white flex items-center justify-between border-b border-emerald-800 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shadow-inner shrink-0 relative">
-              <Bot className="w-5 h-5" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-900 absolute -top-0.5 -right-0.5 animate-pulse" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black truncate">
-                  {getLoc({
-                    en: 'SwasthyaSetu AI Health Assistant',
-                    kn: 'ಸ್ವಾಸ್ಥ್ಯಸೇತು AI ಆರೋಗ್ಯ ಸಹಾಯಕ',
-                    hi: 'स्वास्थ्यसेतु AI स्वास्थ्य सहायक',
-                    ta: 'சுவஸ்த்யாசேது AI உதவியாளர்',
-                    te: 'స్వాస్థ్యసేతు AI ఆరోగ్య సహాయకుడు',
-                    mr: 'स्वास्थ्यसेतू AI आरोग्य सहाय्यक',
-                  })}
-                </h2>
-              </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-emerald-200 font-medium">
-                <Mic className="w-3 h-3 text-emerald-300" />
-                <span>
-                  {getLoc({
-                    en: 'Voice Enabled · Speak in your language',
-                    kn: 'ಧ್ವನಿ ಸಕ್ರಿಯವಾಗಿದೆ · ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ ಮಾತನಾಡಿ',
-                    hi: 'वॉयस सक्षम · अपनी भाषा में बोलें',
-                    ta: 'குரல் உள்ளீடு · உங்கள் மொழியில் பேசுங்கள்',
-                    te: 'వాయిస్ అందుబాటులో ఉంది · మీ భాషలో మాట్లాడండి',
-                    mr: 'व्हॉइस सक्षम · आपल्या भाषेत बोला',
-                  })}
-                </span>
-              </div>
-            </div>
+    <div
+      ref={modalRef}
+      style={{
+        left: position ? (isMaximized ? '50%' : `${position.x}px`) : 'auto',
+        top: position ? (isMaximized ? '50%' : `${position.y}px`) : 'auto',
+        right: position ? 'auto' : '20px',
+        bottom: position ? 'auto' : '20px',
+        transform: isMaximized ? 'translate(-50%, -50%)' : 'none',
+      }}
+      className={`fixed z-[9999] bg-white dark:bg-slate-900 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border-2 border-emerald-500/50 dark:border-emerald-500/40 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 transition-[width,height] ${
+        isMaximized
+          ? 'w-[96vw] sm:w-[680px] h-[90vh] max-h-[820px]'
+          : 'w-[95vw] sm:w-[440px] md:w-[480px] h-[75vh] max-h-[640px]'
+      }`}
+    >
+      {/* ── DRAGGABLE HEADER WITH GRIP HANDLE & WINDOW CONTROLS ── */}
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className={`px-3.5 py-3 bg-gradient-to-r from-emerald-700 via-teal-700 to-slate-900 text-white flex items-center justify-between border-b border-emerald-800 shrink-0 touch-none select-none transition-shadow ${
+          isDragging ? 'cursor-grabbing shadow-lg ring-2 ring-emerald-300' : 'cursor-grab'
+        }`}
+        title="Click and drag anywhere to move this chat window"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className="p-1 rounded-md bg-white/10 hover:bg-white/20 text-emerald-200 cursor-grab active:cursor-grabbing shrink-0 flex items-center justify-center"
+            title="Drag handle: move anywhere on screen"
+          >
+            <GripHorizontal className="w-4 h-4" />
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Quick Language Toggle inside modal */}
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
-              className="px-2.5 py-1 text-xs font-bold rounded-xl bg-white/20 text-white border border-white/30 focus:outline-hidden cursor-pointer"
-            >
-              <option value="en" className="text-slate-900">English</option>
-              <option value="kn" className="text-slate-900">ಕನ್ನಡ (Kannada)</option>
-              <option value="hi" className="text-slate-900">हिन्दी (Hindi)</option>
-              <option value="ta" className="text-slate-900">தமிழ் (Tamil)</option>
-              <option value="te" className="text-slate-900">తెలుగు (Telugu)</option>
-              <option value="mr" className="text-slate-900">मराठी (Marathi)</option>
-            </select>
+          <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shadow-inner shrink-0 relative">
+            <Bot className="w-4.5 h-4.5" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 border-2 border-slate-900 absolute -top-0.5 -right-0.5 animate-pulse" />
+          </div>
 
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-xl text-emerald-100 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          <div className="min-w-0">
+            <h2 className="text-xs sm:text-sm font-black truncate">
+              {getLoc({
+                en: 'AI Voice Health Assistant',
+                kn: 'AI ಧ್ವನಿ ಆರೋಗ್ಯ ಸಹಾಯಕ',
+                hi: 'AI वॉयस स्वास्थ्य सहायक',
+                ta: 'AI குரல் சுகாதார உதவியாளர்',
+                te: 'AI వాయిస్ ఆరోగ్య సహాయకుడు',
+                mr: 'AI व्हॉइस आरोग्य सहाय्यक',
+              })}
+            </h2>
+            <div className="flex items-center gap-1 text-[10px] text-emerald-200 font-medium">
+              <Move className="w-2.5 h-2.5 opacity-80" />
+              <span className="opacity-90">Drag anywhere to move</span>
+            </div>
           </div>
         </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Quick Language Toggle */}
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            className="px-2 py-1 text-[11px] font-bold rounded-lg bg-white/20 text-white border border-white/30 focus:outline-hidden cursor-pointer"
+          >
+            <option value="en" className="text-slate-900">EN</option>
+            <option value="kn" className="text-slate-900">ಕನ್ನಡ</option>
+            <option value="hi" className="text-slate-900">हिन्दी</option>
+            <option value="ta" className="text-slate-900">தமிழ்</option>
+            <option value="te" className="text-slate-900">తెలుగు</option>
+            <option value="mr" className="text-slate-900">मराठी</option>
+          </select>
+
+          {/* Maximize / Restore */}
+          <button
+            onClick={() => setIsMaximized(!isMaximized)}
+            className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-white/20 transition-colors cursor-pointer hidden sm:flex"
+            title={isMaximized ? 'Restore size' : 'Expand window'}
+          >
+            {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
+
+          {/* Minimize */}
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
+            title="Minimize"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Close */}
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-rose-600/80 transition-colors cursor-pointer"
+            aria-label="Close"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
         {/* ── CHAT MESSAGES BODY ── */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/70 dark:bg-slate-950/50">
@@ -1185,6 +1316,5 @@ export function VoiceAiChatModal({ onClose, initialTopic }: VoiceAiChatModalProp
         </div>
 
       </div>
-    </div>
   );
 }

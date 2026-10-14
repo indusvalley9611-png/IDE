@@ -27,6 +27,8 @@ import { MobileEntryPage } from '@/components/mobile/MobileEntryPage';
 import { RuralCitizenPage } from '@/components/citizen/RuralCitizenPage';
 import { VoiceAiChatModal } from '@/components/ai/VoiceAiChatModal';
 import { SymptomChecker } from '@/components/ai/SymptomChecker';
+import { DraggableFloatingTrigger } from '@/components/ai/DraggableFloatingTrigger';
+import { MobileAppDownloadBanner } from '@/components/mobile/MobileAppDownloadBanner';
 import { Bot, Mic, Sparkles } from 'lucide-react';
 
 export default function Home() {
@@ -130,28 +132,11 @@ export default function Home() {
 
   const renderAiAssistantTrigger = () => (
     <>
-      <button
-        onClick={() => setIsSymptomCheckerOpen(true)}
-        className="fixed bottom-5 right-5 z-[80] flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 active:scale-95 text-white px-4 py-3 rounded-full shadow-2xl hover:shadow-emerald-600/40 transition-all border-2 border-white/30 text-xs sm:text-sm font-black cursor-pointer group"
-        aria-label="Open AI Voice Health Assistant"
-        title="AI Voice Health Assistant & Multilingual Triage"
-      >
-        <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-          <Mic className="w-4 h-4 text-white animate-pulse" />
-        </div>
-        <div className="text-left">
-          <div className="text-[9px] uppercase tracking-wider text-emerald-200 font-extrabold leading-none">
-            Voice & All Languages
-          </div>
-          <span className="font-black tracking-wide text-xs sm:text-sm leading-tight block">
-            AI Voice Health Bot
-          </span>
-        </div>
-        <span className="relative flex h-2.5 w-2.5 ml-1">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
-        </span>
-      </button>
+      <MobileAppDownloadBanner />
+
+      {!isSymptomCheckerOpen && (
+        <DraggableFloatingTrigger onOpen={() => setIsSymptomCheckerOpen(true)} />
+      )}
 
       {isSymptomCheckerOpen && (
         <VoiceAiChatModal onClose={() => setIsSymptomCheckerOpen(false)} />
@@ -168,11 +153,14 @@ export default function Home() {
     // 0. RURAL CITIZEN PUBLIC HEALTH PORTAL (Standalone Offline-First Citizen Hub)
     if (unauthView === 'rural_citizen') {
       return (
-        <RuralCitizenPage
-          onBack={() => setUnauthView(isMobile ? 'mobile_entry' : 'signin')}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
-        />
+        <>
+          <RuralCitizenPage
+            onBack={() => setUnauthView(isMobile ? 'mobile_entry' : 'signin')}
+            isDarkMode={isDarkMode}
+            onToggleDarkMode={toggleDarkMode}
+          />
+          {renderAiAssistantTrigger()}
+        </>
       );
     }
 

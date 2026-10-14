@@ -287,6 +287,20 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   };
 
   const addPatient = (newPatient: Patient) => {
+    // ── Prevent Duplicate Registration ──
+    const existing = patients.find(
+      (p) =>
+        p.id === newPatient.id ||
+        (newPatient.abhaId && p.abhaId && p.abhaId.trim().toLowerCase() === newPatient.abhaId.trim().toLowerCase()) ||
+        (newPatient.phone && p.phone && p.phone.trim() === newPatient.phone.trim())
+    );
+
+    if (existing) {
+      console.warn(`[SyncContext] Duplicate registration prevented for patient ${newPatient.fullName}. Existing ABHA: ${existing.abhaId}`);
+      showToast(`Patient already registered: ${existing.fullName} (${existing.abhaId})`);
+      return;
+    }
+
     const updated = [newPatient, ...patients];
     setPatients(updated);
     saveStoredPatients(updated);

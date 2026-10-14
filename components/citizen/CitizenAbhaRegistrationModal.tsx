@@ -20,6 +20,7 @@ import {
   Sparkles,
   ArrowRight,
   RotateCcw,
+  AlertCircle,
 } from 'lucide-react';
 
 interface CitizenAbhaRegistrationModalProps {
@@ -28,7 +29,7 @@ interface CitizenAbhaRegistrationModalProps {
 
 export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistrationModalProps) {
   const { language } = useLanguage();
-  const { addPatient } = useSync();
+  const { addPatient, patients } = useSync();
 
   const getLoc = (dict: Record<Language, string>): string => {
     return dict[language] || dict.en;
@@ -219,6 +220,38 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
       te: 'మరొక నమోదు',
       mr: 'दुसरी नोंदणी',
     }),
+    duplicateFoundNotice: getLoc({
+      en: 'Patient is already registered with this mobile number. You cannot register again.',
+      kn: 'ಈ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯೊಂದಿಗೆ ರೋಗಿಯು ಈಗಾಗಲೇ ನೋಂದಾಯಿಸಲ್ಪಟ್ಟಿದ್ದಾರೆ. ಮತ್ತೊಮ್ಮೆ ನೋಂದಾಯಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.',
+      hi: 'इस मोबाइल नंबर के साथ मरीज पहले से पंजीकृत है। आप दोबारा पंजीकरण नहीं कर सकते।',
+      ta: 'இந்த கைபேசி எண்ணுடன் நோயாளி ஏற்கனவே பதிவு செய்யப்பட்டுள்ளார். மீண்டும் பதிவு செய்ய முடியாது.',
+      te: 'ఈ మొబైల్ సంఖ్యతో రోగి ఇప్పటికే నమోదు చేయబడ్డారు. మళ్లీ నమోదు చేయలేరు.',
+      mr: 'या मोबाईल क्रमांकावर रुग्ण आधीच नोंदणीकृत आहे. पुन्हा नोंदणी करता येणार नाही.',
+    }),
+    viewExistingCardBtn: getLoc({
+      en: 'View & Download Existing ABHA Card',
+      kn: 'ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಆಭಾ ಕಾರ್ಡ್ ವೀಕ್ಷಿಸಿ ಮತ್ತು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ',
+      hi: 'मौजूदा आभा कार्ड देखें और डाउनलोड करें',
+      ta: 'ஏற்கனவே உள்ள ஆபா அட்டையைக் காண்க மற்றும் பதிவிறக்குக',
+      te: 'ఇప్పటికే ఉన్న ఆభా కార్డును చూడండి మరియు డౌన్‌లోడ్ చేయండి',
+      mr: 'विद्यमान आभा कार्ड पहा आणि डाउनलोड करा',
+    }),
+    alreadyRegisteredBadge: getLoc({
+      en: 'Verified Existing ABHA Registration',
+      kn: 'ಪರಿಶೀಲಿಸಿದ ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಆಭಾ ನೋಂದಣಿ',
+      hi: 'सत्यापित मौजूदा आभा पंजीकरण',
+      ta: 'சரிபார்க்கப்பட்ட ஏற்கனவே உள்ள ஆபா பதிவு',
+      te: 'ధృవీకరించబడిన ఇప్పటికే ఉన్న ఆభా నమోదు',
+      mr: 'पडताळलेली विद्यमान आभा नोंदणी',
+    }),
+    alreadyRegisteredSubtitle: getLoc({
+      en: 'This citizen is already registered in the ABDM registry. Your existing official health card has been retrieved.',
+      kn: 'ಈ ನಾಗರಿಕರು ಈಗಾಗಲೇ ಎಬಿಡಿಎಂ ನೋಂದಣಿಯಲ್ಲಿ ನೋಂದಾಯಿಸಲ್ಪಟ್ಟಿದ್ದಾರೆ. ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಅಧಿಕೃತ ಆರೋಗ್ಯ ಕಾರ್ಡ್ ಪಡೆಯಲಾಗಿದೆ.',
+      hi: 'यह नागरिक पहले से एबीडीएम रजिस्ट्री में पंजीकृत हैं। आपका मौजूदा आधिकारिक स्वास्थ्य कार्ड प्राप्त कर लिया गया है।',
+      ta: 'இந்த குடிமகன் ஏற்கனவே ஏபிடிஎம் பதிவேட்டில் பதிவு செய்யப்பட்டுள்ளார். உங்களின் அதிகாரப்பூர்வ அட்டை பெறப்பட்டது.',
+      te: 'ఈ పౌరుడు ఇప్పటికే ఏబీడీఎం రిజిస్ట్రీలో నమోదు చేయబడ్డారు. మీ అధికారిక ఆరోగ్య కార్డు పొందబడింది.',
+      mr: 'हे नागरिक आधीच एबीडीएम नोंदणीमध्ये नोंदणीकृत आहेत. आपले विद्यमान अधिकृत आरोग्य कार्ड मिळवले आहे.',
+    }),
     errorName: getLoc({
       en: 'Please enter your full name',
       kn: 'ದಯವಿಟ್ಟು ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ',
@@ -312,10 +345,45 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
   const [step, setStep] = useState<'FORM' | 'GENERATED'>('FORM');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isExistingRecord, setIsExistingRecord] = useState(false);
 
-  // Generated ABHA details
+  // Generated or Retrieved ABHA details
   const [createdPatient, setCreatedPatient] = useState<Patient | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+
+  // Real-time duplicate check across registry
+  const cleanPhone = phone.trim();
+  const existingPatient = cleanPhone.length >= 10
+    ? patients.find((p) => p.phone && p.phone.trim() === cleanPhone) ||
+      (fullName.trim().length >= 3 && patients.find((p) => p.fullName.trim().toLowerCase() === fullName.trim().toLowerCase() && p.phone && p.phone.trim() === cleanPhone))
+    : null;
+
+  const handleLoadExistingCard = async (patientToLoad: Patient) => {
+    setIsSubmitting(true);
+    setCreatedPatient(patientToLoad);
+    setIsExistingRecord(true);
+    setErrorMsg('');
+    try {
+      const qrPayload = JSON.stringify({
+        abha: patientToLoad.abhaId,
+        address: patientToLoad.abhaAddress || `${patientToLoad.fullName.toLowerCase().replace(/[^a-z0-9]/g, '')}@abdm`,
+        name: patientToLoad.fullName,
+        gender: patientToLoad.gender,
+        district: patientToLoad.district,
+        abdmVer: 'FHIR-R4-2026',
+      });
+      const url = await QRCode.toDataURL(qrPayload, {
+        width: 180,
+        margin: 1,
+        color: { dark: '#0f172a', light: '#ffffff' },
+      });
+      setQrCodeUrl(url);
+    } catch (err) {
+      console.error(err);
+    }
+    setIsSubmitting(false);
+    setStep('GENERATED');
+  };
 
   const handleGenerateAbha = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,7 +396,14 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
       return;
     }
 
+    // If already registered, load their existing official ABHA card without duplicating record
+    if (existingPatient) {
+      await handleLoadExistingCard(existingPatient);
+      return;
+    }
+
     setIsSubmitting(true);
+    setIsExistingRecord(false);
     setErrorMsg('');
 
     // Generate unique 14-digit ABHA ID & address
@@ -510,6 +585,29 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
                     className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+
+                {/* Live duplicate detection warning */}
+                {existingPatient && (
+                  <div className="mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700 space-y-2 animate-in fade-in">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5 text-xs text-amber-900 dark:text-amber-200">
+                        <p className="font-bold">{t.duplicateFoundNotice}</p>
+                        <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                          Registered Citizen: <strong>{existingPatient.fullName}</strong> · ABHA: <span className="font-mono font-bold">{existingPatient.abhaId}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleLoadExistingCard(existingPatient)}
+                      className="w-full py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{t.viewExistingCardBtn}</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Aadhaar Last 4 Digits */}
@@ -567,12 +665,22 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
 
               {/* Submit CTA */}
               <button
-                type="submit"
+                type={existingPatient ? 'button' : 'submit'}
+                onClick={existingPatient ? () => handleLoadExistingCard(existingPatient) : undefined}
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer mt-2"
+                className={`w-full py-3.5 px-4 rounded-xl text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer mt-2 ${
+                  existingPatient
+                    ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/30'
+                    : 'bg-emerald-600 hover:bg-emerald-700 active:scale-98 shadow-emerald-600/30'
+                }`}
               >
                 {isSubmitting ? (
                   <span>{t.submittingBtn}</span>
+                ) : existingPatient ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{t.viewExistingCardBtn}</span>
+                  </>
                 ) : (
                   <>
                     <span>{t.submitBtn}</span>
@@ -585,14 +693,18 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
             /* Generated ABHA Card Display */
             <div className="space-y-4">
               <div className="text-center space-y-1">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                <div className={`w-10 h-10 rounded-full mx-auto flex items-center justify-center ${
+                  isExistingRecord
+                    ? 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400'
+                    : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+                }`}>
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                  {t.successTitle}
+                  {isExistingRecord ? t.alreadyRegisteredBadge : t.successTitle}
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {t.successSubtitle}
+                  {isExistingRecord ? t.alreadyRegisteredSubtitle : t.successSubtitle}
                 </p>
               </div>
 
@@ -705,7 +817,15 @@ export function CitizenAbhaRegistrationModal({ onClose }: CitizenAbhaRegistratio
                   <span>{t.printBtn}</span>
                 </button>
                 <button
-                  onClick={() => setStep('FORM')}
+                  onClick={() => {
+                    setStep('FORM');
+                    setIsExistingRecord(false);
+                    setCreatedPatient(null);
+                    setPhone('');
+                    setFullName('');
+                    setAge('');
+                    setAadhaarLast4('');
+                  }}
                   className="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />

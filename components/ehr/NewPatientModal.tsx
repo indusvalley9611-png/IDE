@@ -90,6 +90,12 @@ export function NewPatientModal({ onClose, onSuccess }: NewPatientModalProps) {
     setTimeout(() => setIsCopied(false), 2500);
   };
 
+  // Active duplicate detection in Register form
+  const duplicateFoundPatient = (formData.phone && formData.phone.trim().length >= 10)
+    ? patients.find((p) => p.phone && p.phone.trim() === formData.phone.trim()) ||
+      (formData.fullName.trim().length >= 3 && patients.find((p) => p.fullName.trim().toLowerCase() === formData.fullName.trim().toLowerCase() && p.phone && p.phone.trim() === formData.phone.trim()))
+    : null;
+
   // Filter existing patients for Search-Before-Create
   const matchingPatients = searchQuery.trim().length >= 2
     ? patients.filter((p) => {
@@ -271,6 +277,11 @@ export function NewPatientModal({ onClose, onSuccess }: NewPatientModalProps) {
   const handleSubmitNewPatient = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName.trim()) return;
+
+    if (duplicateFoundPatient) {
+      alert(`Duplicate registration blocked: Patient ${duplicateFoundPatient.fullName} (ABHA: ${duplicateFoundPatient.abhaId}) is already registered with mobile ${duplicateFoundPatient.phone}. Please link their presentation instead.`);
+      return;
+    }
 
     if (!isOtpVerified) {
       alert('Please verify the patient mobile number with OTP before saving ABHA registration.');
@@ -640,6 +651,49 @@ export function NewPatientModal({ onClose, onSuccess }: NewPatientModalProps) {
               </button>
             </div>
 
+            {/* Live Duplicate Patient Alert Banner */}
+            {duplicateFoundPatient && (
+              <div className="bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-400 dark:border-rose-800 rounded-2xl p-4 space-y-3 animate-in fade-in shadow-xs">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-xs text-rose-900 dark:text-rose-200 uppercase tracking-wide">
+                      Duplicate Registration Blocked: Patient Already Registered
+                    </h4>
+                    <p className="text-xs text-rose-800 dark:text-rose-300">
+                      A patient with this mobile number is already registered as <strong className="underline">{duplicateFoundPatient.fullName}</strong> (ABHA: <span className="font-mono font-bold">{duplicateFoundPatient.abhaId}</span>, {duplicateFoundPatient.gender}, {duplicateFoundPatient.age}y).
+                    </p>
+                    <p className="text-[11px] text-rose-700 dark:text-rose-400">
+                      Government ABDM policy prohibits duplicate registrations for the same individual. You can link their visit to their canonical ABHA record below.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1 pl-11">
+                  <button
+                    type="button"
+                    onClick={() => handleLinkExistingPatient(duplicateFoundPatient)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    <span>Link Direct Walk-in / OPD Presentation</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSuccess(duplicateFoundPatient);
+                      onClose();
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>Open Existing Record</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Basic Info */}
             <div className="space-y-4">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -965,10 +1019,15 @@ export function NewPatientModal({ onClose, onSuccess }: NewPatientModalProps) {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                disabled={!!duplicateFoundPatient}
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 ${
+                  duplicateFoundPatient
+                    ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-75'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg cursor-pointer'
+                }`}
               >
                 <UserPlus className="w-4 h-4" />
-                <span>Create ABHA & Register Patient</span>
+                <span>{duplicateFoundPatient ? 'Registration Blocked (Duplicate Record)' : 'Create ABHA & Register Patient'}</span>
               </button>
             </div>
           </form>

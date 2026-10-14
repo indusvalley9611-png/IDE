@@ -215,14 +215,16 @@ export function MobileEntryPage({
   }, []);
 
   const handleInstallClick = async () => {
-    if (installPrompt) {
+    const promptToUse = installPrompt || (typeof window !== 'undefined' ? (window as any).deferredPwaPrompt : null);
+    if (promptToUse) {
       setIsInstalling(true);
       try {
-        await installPrompt.prompt();
-        const choice = await installPrompt.userChoice;
+        await promptToUse.prompt();
+        const choice = await promptToUse.userChoice;
         if (choice && choice.outcome === 'accepted') {
           setIsInstalled(true);
           setInstallPrompt(null);
+          if (typeof window !== 'undefined') (window as any).deferredPwaPrompt = null;
         }
       } catch (err) {
         console.error('PWA install error:', err);
@@ -230,11 +232,20 @@ export function MobileEntryPage({
         setIsInstalling(false);
       }
     } else {
-      alert(
-        language === 'mr'
-          ? 'तुमच्या फोनच्या होम स्क्रीनवर ॲप जोडण्यासाठी: ब्राउझरच्या शेअर किंवा तीन ठिपक्यांच्या मेनूवर टॅप करा आणि "Add to Home Screen / होम स्क्रीनवर जोडा" निवडा.'
-          : 'To add SwasthyaSetu to your Home Screen: Tap your browser share or menu button (⋮) and select "Add to Home Screen".'
-      );
+      const isApple = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isApple) {
+        alert(
+          language === 'mr'
+            ? 'आयफोन/आयपॅडवर ॲप इन्स्टॉल करण्यासाठी: सफारीच्या खालील शेअर बटनावर (Share) टॅप करा आणि "Add to Home Screen" निवडा.'
+            : 'To install on iPhone/iPad: Tap the Share button at the bottom of Safari, then select "Add to Home Screen".'
+        );
+      } else {
+        alert(
+          language === 'mr'
+            ? 'तुमच्या फोनच्या होम स्क्रीनवर ॲप जोडण्यासाठी: ब्राउझरच्या तीन ठिपक्यांच्या मेनूवर (⋮) टॅप करा आणि "Install app" किंवा "Add to Home screen" निवडा.'
+            : 'To add SwasthyaSetu to your phone: Tap your browser menu (⋮) and select "Install app" or "Add to Home Screen".'
+        );
+      }
     }
   };
 
